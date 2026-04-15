@@ -7,9 +7,14 @@ import asyncio
 import json
 import re
 from typing import Any, List, Dict, Optional, Tuple
+
+import httpx
 from google import genai
 
 from app.config import settings
+
+
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 
 class LLMService:
@@ -154,15 +159,28 @@ class LLMService:
         for candidate in [primary, *self._fallback_models(primary)]:
             tried.append(candidate)
             try:
+                # Gemini 2.5 models burn hidden "thinking" tokens before emitting
+                # any visible output. "-pro" variants require thinking; "-flash"
+                # variants allow `thinking_budget=0` to skip it. For pro we just
+                # raise max_output_tokens high enough that thinking fits inside
+                # the budget with room left for the actual JSON.
+                is_flash = "flash" in candidate or "1.5" in candidate
+                budget = max(max_tokens * 8, 8000)
+                cfg_kwargs: Dict[str, Any] = dict(
+                    system_instruction=system,
+                    temperature=temperature,
+                    max_output_tokens=budget,
+                    response_mime_type="application/json",
+                )
+                if is_flash:
+                    try:
+                        cfg_kwargs["thinking_config"] = genai.types.ThinkingConfig(thinking_budget=0)
+                    except Exception:
+                        pass
                 response = client.models.generate_content(
                     model=candidate,
                     contents=prompt,
-                    config=genai.types.GenerateContentConfig(
-                        system_instruction=system,
-                        temperature=temperature,
-                        max_output_tokens=max_tokens,
-                        response_mime_type="application/json",
-                    ),
+                    config=genai.types.GenerateContentConfig(**cfg_kwargs),
                 )
                 text = (response.text or "").strip()
                 if not text:
@@ -319,13 +337,69 @@ class LLMService:
             "  key_factors: array of 3-5 short bullet phrases\n"
             '  recommended_combo: short string, e.g. "YES A + NO B"'
         )
+        system = "You are a prediction-market quant analyst. Output valid JSON only."
+        if settings.openrouter_api_key:
+            target = model or settings.synthesis_model
+            result = await self._chat_json_openrouter(
+                prompt=prompt,
+                system=system,
+                model=target,
+                temperature=0.4,
+                max_tokens=1400,
+            )
+            if result is not None:
+                return result
+            print("  [synthesis] OpenRouter failed, falling back to Gemini", flush=True)
         return await self._chat_json(
             prompt=prompt,
-            system="You are a prediction-market quant analyst. Output valid JSON only.",
+            system=system,
             model=model,
             temperature=0.4,
             max_tokens=900,
         )
+
+    # ────────────────────────────────────────────────────────────
+    # OpenRouter — used only for the hedge synthesis pass
+    # ────────────────────────────────────────────────────────────
+
+    async def _chat_json_openrouter(
+        self,
+        prompt: str,
+        system: str,
+        model: str,
+        temperature: float,
+        max_tokens: int,
+    ) -> Optional[Dict[str, Any]]:
+        headers = {
+            "Authorization": f"Bearer {settings.openrouter_api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://polycenas.local",
+            "X-Title": "Polycenas",
+        }
+        body = {
+            "model": model,
+            "messages": [
+                {"role": "system", "content": system},
+                {"role": "user", "content": prompt},
+            ],
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "response_format": {"type": "json_object"},
+        }
+        try:
+            async with httpx.AsyncClient(timeout=90.0) as client:
+                r = await client.post(OPENROUTER_URL, headers=headers, json=body)
+                if r.status_code >= 400:
+                    print(f"  OpenRouter {model} HTTP {r.status_code}: {r.text[:240]}", flush=True)
+                    return None
+                data = r.json()
+                content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
+                if not content:
+                    return None
+                return self._parse_json(content)
+        except Exception as e:
+            print(f"  OpenRouter error: {e}", flush=True)
+            return None
 
     async def name_super_clusters_batch(
         self,
