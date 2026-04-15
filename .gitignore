@@ -1,5 +1,7 @@
 .env
 __pycache__/
+.mypy_cache/
+**/.mypy_cache/
 *.pyc
 .venv/
 node_modules/
@@ -8,3 +10,5 @@ backend/runs/
 # Next.js build artifacts
 **/.next/
 **/.next-env.d.ts
+
+backend/venv

@@ -43,26 +43,62 @@ model Market {
 }
 
 model Cluster {
-  id             Int              @id @default(autoincrement())
-  jobId          Int?
-  category       String?
-  isGlobal       Boolean          @default(true)
-  centroidX      Float?
-  centroidY      Float?
-  keywords       String[]         @default([])
-  name           String?
-  totalVolume    Float?
-  topMarketId    Int?
-  topMarketTitle String?
-  superClusterId Int?
-  clusterMarkets ClusterMarket[]
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  id                 Int                  @id @default(autoincrement())
+  jobId              Int?
+  category           String?
+  isGlobal           Boolean              @default(true)
+  centroidX          Float?
+  centroidY          Float?
+  keywords           String[]             @default([])
+  name               String?
+  totalVolume        Float?
+  topMarketId        Int?
+  topMarketTitle     String?
+  superClusterId     Int?
+  clusterMarkets     ClusterMarket[]
+  multibetInference  MultibetInference?
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
 
   @@index([jobId])
   @@index([category])
   @@index([isGlobal])
   @@index([superClusterId])
+}
+
+model MultibetInference {
+  id              Int       @id @default(autoincrement())
+  cluster         Cluster   @relation(fields: [clusterId], references: [id], onDelete: Cascade)
+  clusterId       Int       @unique
+
+  confidenceScore Float
+  direction       String
+
+  marketAId       Int
+  marketBId       Int
+  marketATitle    String
+  marketBTitle    String
+  marketAEventTitle String
+  marketBEventTitle String
+
+  reasoning       String
+  keyFactors      String[]
+
+  correlationR    Float?
+  newsOverlap     Int?
+  featureOverlap  Int?
+  inputSnapshot   Json?
+
+  status          String    @default("pending") // pending / approved / rejected / no_cross_events
+  adminNotes      String?
+  reviewedAt      DateTime?
+  reviewedBy      String?
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([status])
+  @@index([confidenceScore])
 }
 
 model SuperCluster {
