@@ -1,0 +1,17 @@
+@import url("https://fonts.googleapis.com/css2?family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&family=Roboto+Mono:ital,wght@0,100..700;1,100..700&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --font-merriweather: "Merriweather", serif;
+  --font-roboto-mono: "Roboto Mono", monospace;
+}
+
+html,
+body {
+  background-color: rgb(255, 255, 242);
+  color: black;
+}
+
+* {
+  shape-rendering: crispEdges;
+}

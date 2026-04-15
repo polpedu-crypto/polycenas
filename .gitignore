@@ -10,3 +10,5 @@ backend/runs/
 # Next.js build artifacts
 **/.next/
 **/.next-env.d.ts
+
+backend/venv
