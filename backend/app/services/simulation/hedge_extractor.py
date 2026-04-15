@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Tuple
 
 from app.services.llm_service import LLMService
 
+from .store import store
 from .types import AgentAction, AgentSpec, RawHedgeCandidate, SynthesizedHedge
 
 
@@ -129,11 +130,14 @@ async def synthesize_hedges(
             )
             resp = resp or {}
             out[rank - 1] = SynthesizedHedge(
+                id=store.next_hedge_id(),
                 rank=rank,
                 market_a_id=a.market_id,
                 market_b_id=b.market_id,
                 market_a_title=a.market_title,
                 market_b_title=b.market_title,
+                market_a_event_title=a.event_title,
+                market_b_event_title=b.event_title,
                 market_a_cluster_id=a.cluster_id,
                 market_b_cluster_id=b.cluster_id,
                 confidence_score=_clamp_num(resp.get("confidence_score"), 0, 100, 50.0),

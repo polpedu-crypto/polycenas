@@ -3,9 +3,9 @@ import json
 from contextlib import asynccontextmanager
 from typing import Any, Dict, Optional
 
-from fastapi import FastAPI, BackgroundTasks, HTTPException, Query
+from datetime import datetime, timezone
+from fastapi import FastAPI, BackgroundTasks, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.db.prisma_client import prisma, connect_db, disconnect_db
@@ -16,6 +16,7 @@ from app.services.correlation_service import (
 )
 from app.services.llm_service import LLMService
 from app.services.simulation import orchestrator as sim_orchestrator
+from app.services.simulation import serializers as sim_serializers
 from app.services.simulation.store import store as sim_store
 
 
@@ -168,21 +169,35 @@ async def list_superclusters():
 
 
 # ---------------------------------------------------------------------------
-# OASIS-style Simulation (in-memory; SSE for live viewer)
+# Simulation — trigger, read, review, live feed
 # ---------------------------------------------------------------------------
 
 
 class SimulationTriggerRequest(BaseModel):
     agent_cap: Optional[int] = None
     rounds: Optional[int] = None
-    synthesize_top_n: Optional[int] = None
     cheap_model: Optional[str] = None
     premium_model: Optional[str] = None
+    synthesis_model: Optional[str] = None
+    synthesize_top_n: Optional[int] = None
+
+
+class HedgeReviewRequest(BaseModel):
+    action: str
+    admin_notes: Optional[str] = None
+    reviewed_by: Optional[str] = None
+
+
+class ResynthesizeRequest(BaseModel):
+    synthesis_model: Optional[str] = None
+
+
+class HedgePayloadRequest(BaseModel):
+    structured_payload: Dict[str, Any]
 
 
 @app.get("/oasis-simulation/superclusters")
 async def sim_list_superclusters():
-    """List every supercluster with market counts — used by the sim UI dropdown."""
     superclusters = await prisma.supercluster.find_many()
     clusters = await prisma.cluster.find_many(
         where={"superClusterId": {"not": None}},
@@ -196,12 +211,13 @@ async def sim_list_superclusters():
         {
             "id": sc.id,
             "name": sc.name,
-            "market_count": counts.get(sc.id, 0),
             "has_graph": counts.get(sc.id, 0) > 0,
+            "graph_id": None,
+            "market_count": counts.get(sc.id, 0),
         }
         for sc in superclusters
     ]
-    items.sort(key=lambda x: -x["market_count"])
+    items.sort(key=lambda x: (not x["has_graph"], -x["market_count"]))
     return {"superclusters": items}
 
 
@@ -213,30 +229,35 @@ async def sim_trigger(super_cluster_id: int, body: SimulationTriggerRequest):
 
     overrides = body.model_dump(exclude_none=True)
     config = sim_orchestrator.build_config(super_cluster_id, overrides)
-    run = sim_store.create(super_cluster_id=super_cluster_id, config=overrides)
+
+    persisted_config = {
+        "agent_cap": config.agent_cap,
+        "rounds": config.rounds,
+        "synthesize_top_n": config.synthesize_top_n,
+        "platform_type": config.platform_type,
+        "cheap_model": config.cheap_model,
+        "premium_model": config.premium_model,
+        "synthesis_model": config.synthesis_model,
+    }
+    run = sim_store.create(super_cluster_id=super_cluster_id, config=persisted_config)
 
     llm = LLMService()
     run.task = asyncio.create_task(sim_orchestrator.run_pipeline(run, config, llm))
 
     return {
         "status": "started",
-        "run_id": run.run_id,
         "super_cluster_id": super_cluster_id,
         "supercluster_name": sc.name,
-        "overrides": overrides,
     }
 
 
-@app.get("/oasis-simulation/runs")
-async def sim_list_all_runs():
-    return {"runs": sim_store.list()}
-
-
 @app.get("/oasis-simulation/superclusters/{super_cluster_id}/runs")
-async def sim_list_runs(super_cluster_id: int, limit: int = Query(20, ge=1, le=100)):
-    all_runs = sim_store.list()
-    filtered = [r for r in all_runs if r["super_cluster_id"] == super_cluster_id][:limit]
-    return {"super_cluster_id": super_cluster_id, "runs": filtered}
+async def sim_list_runs_for_sc(
+    super_cluster_id: int,
+    limit: int = Query(20, ge=1, le=100),
+):
+    runs = [r for r in sim_store.list() if r.super_cluster_id == super_cluster_id][:limit]
+    return {"runs": [sim_serializers.serialize_run(r) for r in runs]}
 
 
 @app.get("/oasis-simulation/runs/{run_id}")
@@ -244,16 +265,9 @@ async def sim_get_run(run_id: str):
     run = sim_store.get(run_id)
     if not run:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
-    snap = run.snapshot()
     return {
-        "run": {
-            k: snap[k]
-            for k in ("run_id", "super_cluster_id", "status", "current_step",
-                      "rounds_completed", "started_at", "completed_at",
-                      "error", "config", "agent_count", "action_count", "hedge_count")
-        },
-        "agents": snap["agents"],
-        "hedges": snap["hedges"],
+        "run": sim_serializers.serialize_run(run),
+        "hedges": [sim_serializers.serialize_hedge(h, run.run_id) for h in run.hedges],
     }
 
 
@@ -266,65 +280,137 @@ async def sim_get_actions(
     run = sim_store.get(run_id)
     if not run:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
-    filtered = [a.to_dict() for a in run.actions if a.sequence > after_sequence][:limit]
-    return {
-        "run_id": run_id,
-        "after_sequence": after_sequence,
-        "count": len(filtered),
-        "actions": filtered,
-    }
+    filtered = [a for a in run.actions if a.sequence > after_sequence][:limit]
+    actions = [sim_serializers.serialize_action(a) for a in filtered]
+    return {"actions": actions, "count": len(actions)}
 
 
-@app.get("/oasis-simulation/runs/{run_id}/stream")
-async def sim_stream(run_id: str):
-    """Server-Sent Events stream: live actions, step updates, hedges.
+@app.post("/oasis-simulation/hedges/{hedge_id}/review")
+async def sim_review_hedge(hedge_id: int, body: HedgeReviewRequest):
+    if body.action not in ("approve", "reject"):
+        raise HTTPException(status_code=400, detail="action must be 'approve' or 'reject'")
+    run_id, hedge = sim_store.find_hedge(hedge_id)
+    if not hedge:
+        raise HTTPException(status_code=404, detail=f"Hedge {hedge_id} not found")
+    hedge.status = "approved" if body.action == "approve" else "rejected"
+    hedge.admin_notes = body.admin_notes
+    hedge.reviewed_by = body.reviewed_by
+    hedge.reviewed_at = datetime.now(timezone.utc).isoformat()
+    return sim_serializers.serialize_hedge(hedge, run_id)
 
-    Sends a backfill snapshot first (status + existing actions/agents/hedges),
-    then streams new events as they happen. Client should reconnect if the
-    connection drops — backfill is idempotent.
-    """
+
+@app.post("/oasis-simulation/hedges/{hedge_id}/resynthesize")
+async def sim_resynthesize_hedge(hedge_id: int, body: ResynthesizeRequest):
+    from app.services.simulation.hedge_extractor import synthesize_hedges
+    from app.services.simulation.types import RawHedgeCandidate
+
+    run_id, hedge = sim_store.find_hedge(hedge_id)
+    if not hedge:
+        raise HTTPException(status_code=404, detail=f"Hedge {hedge_id} not found")
+    run = sim_store.get(run_id) if run_id else None
+    if not run:
+        raise HTTPException(status_code=404, detail=f"Run for hedge {hedge_id} not found")
+
+    model = body.synthesis_model or run.config.get("synthesis_model") or "gemini-2.5-pro"
+    agents_by_id = {a.market_id: a for a in run.agents}
+    raw = RawHedgeCandidate(
+        market_a_id=hedge.market_a_id,
+        market_b_id=hedge.market_b_id,
+        co_movement_score=hedge.co_movement_score,
+        interaction_score=hedge.interaction_score,
+        contradiction_score=hedge.contradiction_score,
+        hedge_score=hedge.hedge_score,
+    )
+    llm = LLMService()
+    fresh = await synthesize_hedges(
+        [raw],
+        agents_by_market_id=agents_by_id,
+        actions=run.actions,
+        llm=llm,
+        model=model,
+        concurrency=1,
+    )
+    if fresh:
+        new = fresh[0]
+        hedge.confidence_score = new.confidence_score
+        hedge.direction = new.direction
+        hedge.reasoning = new.reasoning
+        hedge.key_factors = new.key_factors
+        hedge.recommended_combo = new.recommended_combo
+    return sim_serializers.serialize_hedge(hedge, run_id)
+
+
+@app.post("/oasis-simulation/hedges/{hedge_id}/payload")
+async def sim_patch_hedge_payload(hedge_id: int, body: HedgePayloadRequest):
+    run_id, hedge = sim_store.find_hedge(hedge_id)
+    if not hedge:
+        raise HTTPException(status_code=404, detail=f"Hedge {hedge_id} not found")
+    hedge.structured_payload = body.structured_payload
+    return sim_serializers.serialize_hedge(hedge, run_id)
+
+
+@app.websocket("/ws/simulation/{run_id}")
+async def sim_ws(websocket: WebSocket, run_id: str):
+    await websocket.accept()
     run = sim_store.get(run_id)
     if not run:
-        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+        await websocket.send_json({"type": "error", "error": f"Run {run_id} not found"})
+        await websocket.close()
+        return
 
     queue = run.subscribe()
 
-    async def event_gen():
+    await websocket.send_json({
+        "type": "backfill",
+        "actions": [sim_serializers.serialize_action(a) for a in run.actions],
+    })
+    await websocket.send_json({"type": "run_status", "status": run.status})
+
+    async def reader():
         try:
-            snap = run.snapshot()
-            yield _sse("snapshot", {
-                "run_id": run.run_id,
-                "status": snap["status"],
-                "current_step": snap["current_step"],
-                "rounds_completed": snap["rounds_completed"],
-                "agents": snap["agents"],
-                "actions": snap["actions"],
-                "hedges": snap["hedges"],
-            })
             while True:
-                if run.status in ("completed", "failed") and queue.empty():
-                    yield _sse("end", {"status": run.status})
-                    break
+                msg = await websocket.receive_text()
                 try:
-                    msg = await asyncio.wait_for(queue.get(), timeout=15.0)
-                except asyncio.TimeoutError:
-                    yield ": keepalive\n\n"
+                    data = json.loads(msg)
+                except Exception:
                     continue
-                yield _sse(msg.get("type", "message"), msg)
-                if msg.get("type") == "end":
+                if data.get("type") == "ping":
+                    await websocket.send_json({"type": "pong"})
+        except WebSocketDisconnect:
+            pass
+        except Exception:
+            pass
+
+    reader_task = asyncio.create_task(reader())
+
+    try:
+        while True:
+            if run.status in ("completed", "failed") and queue.empty():
+                await websocket.send_json({"type": "run_status", "status": run.status})
+                break
+            try:
+                event = await asyncio.wait_for(queue.get(), timeout=30.0)
+            except asyncio.TimeoutError:
+                try:
+                    await websocket.send_json({"type": "heartbeat"})
+                except Exception:
                     break
-        finally:
-            run.unsubscribe(queue)
-
-    return StreamingResponse(
-        event_gen(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
-
-
-def _sse(event: str, data: Any) -> str:
-    return f"event: {event}\ndata: {json.dumps(data, default=str)}\n\n"
+                continue
+            etype = event.get("type")
+            if etype in ("simulation_action", "run_status"):
+                try:
+                    await websocket.send_json(event)
+                except Exception:
+                    break
+            elif etype == "end":
+                break
+    finally:
+        reader_task.cancel()
+        run.unsubscribe(queue)
+        try:
+            await websocket.close()
+        except Exception:
+            pass
 
 
 @app.get("/superclusters/{supercluster_id}")

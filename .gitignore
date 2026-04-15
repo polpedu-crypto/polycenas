@@ -3,6 +3,7 @@ __pycache__/
 *.pyc
 .venv/
 node_modules/
+backend/runs/
 
 # Next.js build artifacts
 **/.next/

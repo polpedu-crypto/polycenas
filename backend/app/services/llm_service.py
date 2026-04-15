@@ -127,6 +127,17 @@ class LLMService:
     # Simulation JSON helpers
     # ────────────────────────────────────────────────────────────
 
+    # On transient errors (503 / UNAVAILABLE / 429 / 500) we fall back down
+    # this chain until one succeeds.
+    _FALLBACK_CHAIN: Dict[str, List[str]] = {
+        "gemini-2.5-pro": ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"],
+        "gemini-2.5-flash": ["gemini-2.0-flash", "gemini-1.5-flash"],
+        "gemini-2.0-flash": ["gemini-1.5-flash"],
+    }
+
+    def _fallback_models(self, model: str) -> List[str]:
+        return self._FALLBACK_CHAIN.get(model, [])
+
     async def _chat_json(
         self,
         prompt: str,
@@ -137,25 +148,38 @@ class LLMService:
     ) -> Optional[Dict[str, Any]]:
         if not self.available:
             return None
-        try:
-            client = self._get_client()
-            response = client.models.generate_content(
-                model=model or settings.naming_model,
-                contents=prompt,
-                config=genai.types.GenerateContentConfig(
-                    system_instruction=system,
-                    temperature=temperature,
-                    max_output_tokens=max_tokens,
-                    response_mime_type="application/json",
-                ),
-            )
-            text = (response.text or "").strip()
-            if not text:
+        client = self._get_client()
+        primary = model or settings.naming_model
+        tried: List[str] = []
+        for candidate in [primary, *self._fallback_models(primary)]:
+            tried.append(candidate)
+            try:
+                response = client.models.generate_content(
+                    model=candidate,
+                    contents=prompt,
+                    config=genai.types.GenerateContentConfig(
+                        system_instruction=system,
+                        temperature=temperature,
+                        max_output_tokens=max_tokens,
+                        response_mime_type="application/json",
+                    ),
+                )
+                text = (response.text or "").strip()
+                if not text:
+                    return None
+                if candidate != primary:
+                    print(f"  [fallback] {primary} -> {candidate} succeeded", flush=True)
+                return self._parse_json(text)
+            except Exception as e:
+                msg = str(e)
+                transient = any(s in msg for s in ("503", "UNAVAILABLE", "429", "RESOURCE_EXHAUSTED", "500"))
+                if transient:
+                    print(f"  [transient] {candidate} failed, trying next in chain", flush=True)
+                    continue
+                print(f"Gemini JSON error ({candidate}): {e}", flush=True)
                 return None
-            return self._parse_json(text)
-        except Exception as e:
-            print(f"Gemini JSON error: {e}", flush=True)
-            return None
+        print(f"Gemini JSON exhausted fallback chain: {tried}", flush=True)
+        return None
 
     @staticmethod
     def _parse_json(text: str) -> Optional[Dict[str, Any]]:
