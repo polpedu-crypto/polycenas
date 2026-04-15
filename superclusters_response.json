@@ -1,0 +1,2278 @@
+[
+    {
+        "id": 11,
+        "name": "Global Political",
+        "metadata": {
+            "cluster_count": 11
+        },
+        "total_volume": 2304208782.170969,
+        "cluster_count": 11,
+        "market_count": 531,
+        "clusters": [
+            {
+                "id": 2194,
+                "name": "Political Election Outcomes",
+                "keywords": [
+                    "primary",
+                    "primary election",
+                    "governor",
+                    "republican primary",
+                    "governor republican"
+                ],
+                "total_volume": 2216096595.674915,
+                "market_count": 342,
+                "top_market": {
+                    "id": 453,
+                    "title": "Will LeBron James win the 2028 US Presidential Election?",
+                    "volume": 46627607.6310614
+                }
+            },
+            {
+                "id": 2212,
+                "name": "Election and Prize",
+                "keywords": [
+                    "win california",
+                    "election 2026",
+                    "california governor",
+                    "governor election",
+                    "california"
+                ],
+                "total_volume": 45736429.8831,
+                "market_count": 73,
+                "top_market": {
+                    "id": 4574,
+                    "title": "Will David Belliard win the Paris mayor election?",
+                    "volume": 7869055.178738006
+                }
+            },
+            {
+                "id": 2230,
+                "name": "South Korean Provincial Elections",
+                "keywords": [
+                    "south",
+                    "korean",
+                    "provincial",
+                    "elections"
+                ],
+                "total_volume": 29733296.55871904,
+                "market_count": 55,
+                "top_market": {
+                    "id": 5236,
+                    "title": "Will Cho Eun-hee win the 2026 Seoul Mayoral Election",
+                    "volume": 2215285.619179997
+                }
+            },
+            {
+                "id": 2242,
+                "name": "2026 Midterm Midterm Elections Midterm Elections Republican",
+                "keywords": [
+                    "2026 midterm",
+                    "midterm elections",
+                    "midterm",
+                    "elections republican",
+                    "party hold"
+                ],
+                "total_volume": 5704896.344746002,
+                "market_count": 10,
+                "top_market": {
+                    "id": 528,
+                    "title": "2026 Balance of Power: D Senate, D House",
+                    "volume": 1314028.199844005
+                }
+            },
+            {
+                "id": 2224,
+                "name": "Wealth",
+                "keywords": [
+                    "tax",
+                    "billionaire",
+                    "time wealth",
+                    "wealth",
+                    "billionaire time"
+                ],
+                "total_volume": 3143208.57433397,
+                "market_count": 4,
+                "top_market": {
+                    "id": 4607,
+                    "title": "Billionaire one-time wealth tax passes in California election 2026?",
+                    "volume": 2932225.961328974
+                }
+            },
+            {
+                "id": 2249,
+                "name": "Province Gubernatorial Province Gubernatorial Election Gubernatorial",
+                "keywords": [
+                    "province gubernatorial",
+                    "province",
+                    "gubernatorial election",
+                    "gubernatorial",
+                    "mayoral election"
+                ],
+                "total_volume": 2300256.552436,
+                "market_count": 8,
+                "top_market": {
+                    "id": 6023,
+                    "title": "Will the People Power Party (PPP) win the 2026 South Korean local elections?",
+                    "volume": 1029129.545104
+                }
+            },
+            {
+                "id": 2298,
+                "name": "Democratic Nominee Nominee Ny Ny Nominee",
+                "keywords": [
+                    "democratic nominee",
+                    "nominee ny",
+                    "ny",
+                    "nominee",
+                    "democratic"
+                ],
+                "total_volume": 552197.3549569999,
+                "market_count": 14,
+                "top_market": {
+                    "id": 696215,
+                    "title": "Will James Talarico win the Texas Democratic Senate Primary by between 6.00% and 6.50%?",
+                    "volume": 98905.970192
+                }
+            },
+            {
+                "id": 2306,
+                "name": "Bul",
+                "keywords": [
+                    "bulgarian",
+                    "bulgarian parliamentary",
+                    "2026 bulgarian",
+                    "parliamentary election",
+                    "parliamentary"
+                ],
+                "total_volume": 444426.2576600001,
+                "market_count": 12,
+                "top_market": {
+                    "id": 1707712,
+                    "title": "Will Progressive Bulgaria (PB) win the most seats in the 2026 Bulgarian parliamentary election?",
+                    "volume": 72200.03686300006
+                }
+            },
+            {
+                "id": 2304,
+                "name": "California",
+                "keywords": [
+                    "california"
+                ],
+                "total_volume": 236980.0903820001,
+                "market_count": 6,
+                "top_market": {
+                    "id": 12190,
+                    "title": "Will the Democratic Party win the CA-15 House seat?",
+                    "volume": 75948.75163300002
+                }
+            },
+            {
+                "id": 2308,
+                "name": "State Governor Primary",
+                "keywords": [
+                    "state",
+                    "governor",
+                    "primary"
+                ],
+                "total_volume": 143062.5228400002,
+                "market_count": 4,
+                "top_market": {
+                    "id": 6599,
+                    "title": "Will Karrin Taylor Robson win the 2026 Arizona Governor Republican primary election?",
+                    "volume": 51395.07664200018
+                }
+            },
+            {
+                "id": 2309,
+                "name": "State Gubernatorial",
+                "keywords": [
+                    "state",
+                    "gubernatorial"
+                ],
+                "total_volume": 117432.3568800003,
+                "market_count": 3,
+                "top_market": {
+                    "id": 7053,
+                    "title": "Will Marty Tuley win the 2026 Kansas Governor Democratic primary election?",
+                    "volume": 49377.03743000005
+                }
+            }
+        ]
+    },
+    {
+        "id": 1,
+        "name": "2",
+        "metadata": {
+            "cluster_count": 6
+        },
+        "total_volume": 2215223251.3743815,
+        "cluster_count": 6,
+        "market_count": 597,
+        "clusters": [
+            {
+                "id": 2191,
+                "name": "2026 Sports League Champions",
+                "keywords": [
+                    "2026",
+                    "sports",
+                    "league",
+                    "champions"
+                ],
+                "total_volume": 1163568698.293588,
+                "market_count": 166,
+                "top_market": {
+                    "id": 282,
+                    "title": "Will the Indiana Pacers win the 2026 NBA Finals?",
+                    "volume": 90726525.1721648
+                }
+            },
+            {
+                "id": 2190,
+                "name": "European Football Match & League Winners",
+                "keywords": [
+                    "2025 26",
+                    "26",
+                    "league",
+                    "2025",
+                    "win 2025"
+                ],
+                "total_volume": 837964620.1818204,
+                "market_count": 291,
+                "top_market": {
+                    "id": 621,
+                    "title": "Will Chelsea win the 2025\u201326 English Premier League?",
+                    "volume": 91279169.5885377
+                }
+            },
+            {
+                "id": 2210,
+                "name": "Formula 1",
+                "keywords": [
+                    "2026 f1",
+                    "f1",
+                    "champion",
+                    "f1 drivers",
+                    "drivers champion"
+                ],
+                "total_volume": 117548426.2122946,
+                "market_count": 49,
+                "top_market": {
+                    "id": 6979,
+                    "title": "Will Valtteri Bottas be the 2026 F1 Drivers' Champion?",
+                    "volume": 8033715.35925476
+                }
+            },
+            {
+                "id": 2215,
+                "name": "Eurovision Winner 2026",
+                "keywords": [
+                    "eurovision",
+                    "winner",
+                    "2026"
+                ],
+                "total_volume": 95510610.12852147,
+                "market_count": 82,
+                "top_market": {
+                    "id": 6798,
+                    "title": "Will Austria win Eurovision 2026?",
+                    "volume": 4667742.505065876
+                }
+            },
+            {
+                "id": 2278,
+                "name": "Football Player & Match Events",
+                "keywords": [
+                    "football",
+                    "player",
+                    "match",
+                    "events"
+                ],
+                "total_volume": 446822.8206599998,
+                "market_count": 5,
+                "top_market": {
+                    "id": 2440743,
+                    "title": "Will Neymar play in the 2026 FIFA World Cup?",
+                    "volume": 261346.0848199998
+                }
+            },
+            {
+                "id": 2302,
+                "name": "Record 26 Uefa Uefa Assists",
+                "keywords": [
+                    "record",
+                    "26 uefa",
+                    "uefa",
+                    "assists",
+                    "conference league"
+                ],
+                "total_volume": 184073.737497,
+                "market_count": 4,
+                "top_market": {
+                    "id": 692607,
+                    "title": "Will Guglielmo Vicario record the most clean sheets in the 2025-26 UEFA Champions League?",
+                    "volume": 82082.09098500002
+                }
+            }
+        ]
+    },
+    {
+        "id": 13,
+        "name": "Political Leadership &",
+        "metadata": {
+            "cluster_count": 6
+        },
+        "total_volume": 891204586.6014913,
+        "cluster_count": 6,
+        "market_count": 427,
+        "clusters": [
+            {
+                "id": 2189,
+                "name": "Executive Appointments &",
+                "keywords": [
+                    "chair",
+                    "fed chair",
+                    "fed",
+                    "trump nominate",
+                    "nominate"
+                ],
+                "total_volume": 582049331.8216999,
+                "market_count": 58,
+                "top_market": {
+                    "id": 926,
+                    "title": "Will Trump nominate Judy Shelton as the next Fed chair?",
+                    "volume": 104941629.570505
+                }
+            },
+            {
+                "id": 2197,
+                "name": "Latin American Presidential",
+                "keywords": [
+                    "latin",
+                    "american",
+                    "presidential"
+                ],
+                "total_volume": 158969014.8716046,
+                "market_count": 83,
+                "top_market": {
+                    "id": 8969,
+                    "title": "Will Richard Grenell be the leader of Venezuela end of 2026?",
+                    "volume": 31711211.61567901
+                }
+            },
+            {
+                "id": 2213,
+                "name": "National Political Leadership Changes",
+                "keywords": [
+                    "prime minister",
+                    "minister",
+                    "prime",
+                    "dutch",
+                    "dutch government"
+                ],
+                "total_volume": 94630719.56985591,
+                "market_count": 168,
+                "top_market": {
+                    "id": 2637078,
+                    "title": "Netanyahu out by April 30?",
+                    "volume": 7836246.014080933
+                }
+            },
+            {
+                "id": 2208,
+                "name": "Iranian Leadership",
+                "keywords": [
+                    "ends",
+                    "ends april",
+                    "iran ends",
+                    "2026 military",
+                    "action iran"
+                ],
+                "total_volume": 43776541.06078997,
+                "market_count": 43,
+                "top_market": {
+                    "id": 694761,
+                    "title": "Will Mojtaba Khamenei be the next Supreme Leader of Iran?",
+                    "volume": 9468769.653848963
+                }
+            },
+            {
+                "id": 2247,
+                "name": "Next leader out of power before 2027?",
+                "keywords": [
+                    "next",
+                    "leader",
+                    "out",
+                    "power",
+                    "before"
+                ],
+                "total_volume": 11320786.249598,
+                "market_count": 66,
+                "top_market": {
+                    "id": 1390433,
+                    "title": "Will Benjamin Netanyahu be the next leader out before 2027?",
+                    "volume": 1055411.26982
+                }
+            },
+            {
+                "id": 2293,
+                "name": "Political Personnel",
+                "keywords": [
+                    "political",
+                    "personnel"
+                ],
+                "total_volume": 458193.0279429997,
+                "market_count": 9,
+                "top_market": {
+                    "id": 6011799,
+                    "title": "Will Donald Trump announce Lee Zeldin as the next United States Attorney General by June 30?",
+                    "volume": 155453.3212289998
+                }
+            }
+        ]
+    },
+    {
+        "id": 7,
+        "name": "Business &",
+        "metadata": {
+            "cluster_count": 14
+        },
+        "total_volume": 343429150.926209,
+        "cluster_count": 14,
+        "market_count": 1167,
+        "clusters": [
+            {
+                "id": 2214,
+                "name": "Asset Price & Event Forecasts",
+                "keywords": [
+                    "000",
+                    "bitcoin",
+                    "hit",
+                    "price",
+                    "000 april"
+                ],
+                "total_volume": 155372537.4971779,
+                "market_count": 412,
+                "top_market": {
+                    "id": 6010853,
+                    "title": "Will Bitcoin reach $150,000 in April?",
+                    "volume": 5732947.271506978
+                }
+            },
+            {
+                "id": 2219,
+                "name": "New Project",
+                "keywords": [
+                    "day launch",
+                    "fdv",
+                    "day",
+                    "launch",
+                    "300m day"
+                ],
+                "total_volume": 77055842.0544501,
+                "market_count": 254,
+                "top_market": {
+                    "id": 8429,
+                    "title": "Opinion FDV above $500M one day after launch?",
+                    "volume": 3281329.401997949
+                }
+            },
+            {
+                "id": 2211,
+                "name": "Future Industry & Market Leaders",
+                "keywords": [
+                    "model",
+                    "ai model",
+                    "ai",
+                    "model end",
+                    "best"
+                ],
+                "total_volume": 41722850.11987694,
+                "market_count": 119,
+                "top_market": {
+                    "id": 5753,
+                    "title": "Will Nebius Group be acquired before 2027?",
+                    "volume": 7906383.997840051
+                }
+            },
+            {
+                "id": 2241,
+                "name": "Tech",
+                "keywords": [
+                    "ipo",
+                    "ipo 2027",
+                    "spacex",
+                    "cap 2026",
+                    "highest ipo"
+                ],
+                "total_volume": 31505170.82468303,
+                "market_count": 175,
+                "top_market": {
+                    "id": 7381,
+                    "title": "Will SpaceX's public ticker be $SEX?",
+                    "volume": 1337689.140667027
+                }
+            },
+            {
+                "id": 2239,
+                "name": "Future Product",
+                "keywords": [
+                    "token",
+                    "launch token",
+                    "launch",
+                    "token march",
+                    "token december"
+                ],
+                "total_volume": 20403586.725478,
+                "market_count": 116,
+                "top_market": {
+                    "id": 20,
+                    "title": "Starmer out by June 30, 2026?",
+                    "volume": 1492802.857245001
+                }
+            },
+            {
+                "id": 2225,
+                "name": "MicroStrategy",
+                "keywords": [
+                    "microstrategy",
+                    "2026 microstrategy",
+                    "microstrategy announce",
+                    "sells bitcoin",
+                    "sells"
+                ],
+                "total_volume": 4851340.506395,
+                "market_count": 10,
+                "top_market": {
+                    "id": 2,
+                    "title": "MicroStrategy sells any Bitcoin by March 31, 2026?",
+                    "volume": 2710379.626318002
+                }
+            },
+            {
+                "id": 2233,
+                "name": "Ep",
+                "keywords": [
+                    "epstein",
+                    "visited epstein",
+                    "visited",
+                    "confirmed visited",
+                    "epstein island"
+                ],
+                "total_volume": 3550590.960899012,
+                "market_count": 13,
+                "top_market": {
+                    "id": 8376,
+                    "title": "Jeffrey Epstein confirmed to be alive before 2027?",
+                    "volume": 1978276.706205012
+                }
+            },
+            {
+                "id": 2254,
+                "name": "Largest Companies by",
+                "keywords": [
+                    "largest",
+                    "companies"
+                ],
+                "total_volume": 2192565.996361003,
+                "market_count": 13,
+                "top_market": {
+                    "id": 3776502,
+                    "title": "Will NVIDIA be the second-largest company in the world by market cap on April 30?",
+                    "volume": 734453.9522550018
+                }
+            },
+            {
+                "id": 2280,
+                "name": "Icon",
+                "keywords": [
+                    "bond",
+                    "announced james",
+                    "james bond",
+                    "leave trump",
+                    "announced"
+                ],
+                "total_volume": 1787067.371048999,
+                "market_count": 15,
+                "top_market": {
+                    "id": 911,
+                    "title": "No one announced as next James Bond?",
+                    "volume": 249270.6103299998
+                }
+            },
+            {
+                "id": 2262,
+                "name": "Warner Bros. Acquisition Scenarios",
+                "keywords": [
+                    "warner bros",
+                    "warner",
+                    "bros acquisition",
+                    "bros",
+                    "acquisition"
+                ],
+                "total_volume": 1760225.516331999,
+                "market_count": 7,
+                "top_market": {
+                    "id": 6879,
+                    "title": "Will Paramount close Warner Bros acquisition?",
+                    "volume": 441889.4137889997
+                }
+            },
+            {
+                "id": 2272,
+                "name": "Largest Company World Market Company World Largest",
+                "keywords": [
+                    "largest company",
+                    "world market",
+                    "company world",
+                    "largest",
+                    "company"
+                ],
+                "total_volume": 1539289.521088,
+                "market_count": 10,
+                "top_market": {
+                    "id": 5112,
+                    "title": "Will Jeff Bezos be richest person on December 31?",
+                    "volume": 308059.2561779998
+                }
+            },
+            {
+                "id": 2282,
+                "name": "Corporate &",
+                "keywords": [
+                    "tesla",
+                    "30 tesla",
+                    "merger",
+                    "announced june",
+                    "officially announced"
+                ],
+                "total_volume": 797973.210941,
+                "market_count": 9,
+                "top_market": {
+                    "id": 4754,
+                    "title": "Mamdani opens city-owned grocery store  by June 30?",
+                    "volume": 232764.4907789993
+                }
+            },
+            {
+                "id": 2301,
+                "name": "New Token Launch FDV",
+                "keywords": [
+                    "day launch",
+                    "fdv",
+                    "100m day",
+                    "fdv 100m",
+                    "100m"
+                ],
+                "total_volume": 523956.561754,
+                "market_count": 11,
+                "top_market": {
+                    "id": 1395105,
+                    "title": "Surf FDV above $50M one day after launch?",
+                    "volume": 82586.10048499997
+                }
+            },
+            {
+                "id": 2281,
+                "name": "Hyperliquid Future",
+                "keywords": [
+                    "hyperliquid",
+                    "future"
+                ],
+                "total_volume": 366154.0597240002,
+                "market_count": 3,
+                "top_market": {
+                    "id": 9103,
+                    "title": "Hyperliquid listed on Binance in 2026?",
+                    "volume": 234627.4158170001
+                }
+            }
+        ]
+    },
+    {
+        "id": 15,
+        "name": "Iran Stability",
+        "metadata": {
+            "cluster_count": 6
+        },
+        "total_volume": 340990261.9839901,
+        "cluster_count": 6,
+        "market_count": 320,
+        "clusters": [
+            {
+                "id": 2200,
+                "name": "Iran Conflict &",
+                "keywords": [
+                    "iran",
+                    "conflict"
+                ],
+                "total_volume": 192486501.4818492,
+                "market_count": 126,
+                "top_market": {
+                    "id": 5998879,
+                    "title": "Military action against Iran ends by April 17, 2026?",
+                    "volume": 22349875.138979
+                }
+            },
+            {
+                "id": 2198,
+                "name": "Iran's",
+                "keywords": [
+                    "iranian",
+                    "iranian regime",
+                    "regime",
+                    "longer",
+                    "regime fall"
+                ],
+                "total_volume": 97606625.24511087,
+                "market_count": 15,
+                "top_market": {
+                    "id": 707544,
+                    "title": "Will the Iranian regime fall by April 30?",
+                    "volume": 31538556.1166261
+                }
+            },
+            {
+                "id": 2206,
+                "name": "US-Iran",
+                "keywords": [
+                    "us-iran"
+                ],
+                "total_volume": 33806873.45081698,
+                "market_count": 97,
+                "top_market": {
+                    "id": 4824,
+                    "title": "Will the U.S. invade Iran before 2027?",
+                    "volume": 10130821.76204903
+                }
+            },
+            {
+                "id": 2231,
+                "name": "Israel",
+                "keywords": [
+                    "israel",
+                    "2026 israel",
+                    "lebanon",
+                    "recognize",
+                    "recognize palestine"
+                ],
+                "total_volume": 12287642.38185201,
+                "market_count": 63,
+                "top_market": {
+                    "id": 3774868,
+                    "title": "Israel x Hezbollah ceasefire by April 30, 2026?",
+                    "volume": 2160531.013106007
+                }
+            },
+            {
+                "id": 2238,
+                "name": "Geopolitical Conflicts",
+                "keywords": [
+                    "clash",
+                    "military clash",
+                    "clash 2027",
+                    "2027 china",
+                    "china"
+                ],
+                "total_volume": 3565947.455295003,
+                "market_count": 13,
+                "top_market": {
+                    "id": 5165,
+                    "title": "China x Taiwan military clash before 2027?",
+                    "volume": 1611943.937191005
+                }
+            },
+            {
+                "id": 2261,
+                "name": "Iran Ceasefire Ceasefire Ceasefire Extended Extended April",
+                "keywords": [
+                    "iran ceasefire",
+                    "ceasefire",
+                    "ceasefire extended",
+                    "extended april",
+                    "extended"
+                ],
+                "total_volume": 1236671.969065999,
+                "market_count": 6,
+                "top_market": {
+                    "id": 6025625,
+                    "title": "Will the US x Iran ceasefire be extended by April 14, 2026?",
+                    "volume": 492017.9995830004
+                }
+            }
+        ]
+    },
+    {
+        "id": 2,
+        "name": "Professional Sports",
+        "metadata": {
+            "cluster_count": 7
+        },
+        "total_volume": 258346198.09664,
+        "cluster_count": 7,
+        "market_count": 407,
+        "clusters": [
+            {
+                "id": 2205,
+                "name": "Major",
+                "keywords": [
+                    "conference",
+                    "stanley cup",
+                    "eastern",
+                    "nhl stanley",
+                    "eastern conference"
+                ],
+                "total_volume": 145173421.0910149,
+                "market_count": 254,
+                "top_market": {
+                    "id": 247,
+                    "title": "Will the Colorado Avalanche win the 2026 NHL Stanley Cup?",
+                    "volume": 13480657.26014801
+                }
+            },
+            {
+                "id": 2202,
+                "name": "Sports Player & Coach Awards",
+                "keywords": [
+                    "2026 nba",
+                    "nba",
+                    "2025 2026",
+                    "year",
+                    "win 2025"
+                ],
+                "total_volume": 105783492.8371011,
+                "market_count": 110,
+                "top_market": {
+                    "id": 544,
+                    "title": "Will Luka Doncic win the 2025\u20132026 NBA MVP?",
+                    "volume": 14146548.87165598
+                }
+            },
+            {
+                "id": 2267,
+                "name": "Professional Sports Draft Outcomes",
+                "keywords": [
+                    "draft",
+                    "2026 nfl",
+                    "pick 2026",
+                    "pick",
+                    "nfl draft"
+                ],
+                "total_volume": 2919093.084592999,
+                "market_count": 30,
+                "top_market": {
+                    "id": 6439923,
+                    "title": "Magic vs. 76ers: O/U 220.5",
+                    "volume": 390727.5503300002
+                }
+            },
+            {
+                "id": 2227,
+                "name": "Athlete",
+                "keywords": [
+                    "athlete"
+                ],
+                "total_volume": 2372937.605502,
+                "market_count": 3,
+                "top_market": {
+                    "id": 6076846,
+                    "title": "Will Aaron Rodgers sign with the New York Giants?",
+                    "volume": 2291280.085285
+                }
+            },
+            {
+                "id": 2240,
+                "name": "NFL Player Futures",
+                "keywords": [
+                    "nfl",
+                    "player",
+                    "futures"
+                ],
+                "total_volume": 1854920.538271,
+                "market_count": 4,
+                "top_market": {
+                    "id": 6060746,
+                    "title": "Will Marvin Harrison Jr. be the top Fantasy Wide Receiver?",
+                    "volume": 1372208.45655
+                }
+            },
+            {
+                "id": 2307,
+                "name": "Fantasy Aaron Rodgers Rodgers Seattle",
+                "keywords": [
+                    "fantasy",
+                    "aaron rodgers",
+                    "rodgers",
+                    "seattle",
+                    "retire"
+                ],
+                "total_volume": 158081.019423,
+                "market_count": 4,
+                "top_market": {
+                    "id": 4998,
+                    "title": "Will Lionel Messi play in the 2026 FIFA World Cup?",
+                    "volume": 60781.81414000006
+                }
+            },
+            {
+                "id": 2310,
+                "name": "Seattle Seahawks",
+                "keywords": [
+                    "seattle",
+                    "seahawks"
+                ],
+                "total_volume": 84251.920735,
+                "market_count": 2,
+                "top_market": {
+                    "id": 692481,
+                    "title": " Will Seattle Seahawks visit the White House in 2026?",
+                    "volume": 49050.69092100001
+                }
+            }
+        ]
+    },
+    {
+        "id": 12,
+        "name": "Act & Law",
+        "metadata": {
+            "cluster_count": 6
+        },
+        "total_volume": 170149095.0295352,
+        "cluster_count": 6,
+        "market_count": 209,
+        "clusters": [
+            {
+                "id": 2193,
+                "name": "Future Political and Business Events",
+                "keywords": [
+                    "prison",
+                    "sentenced",
+                    "years prison",
+                    "years",
+                    "diddy"
+                ],
+                "total_volume": 118267409.9216919,
+                "market_count": 160,
+                "top_market": {
+                    "id": 5965,
+                    "title": "Will Jesus Christ return before 2027?",
+                    "volume": 57318685.8217551
+                }
+            },
+            {
+                "id": 2196,
+                "name": "Political Figure Travel",
+                "keywords": [
+                    "political",
+                    "figure",
+                    "travel"
+                ],
+                "total_volume": 44559972.6134473,
+                "market_count": 11,
+                "top_market": {
+                    "id": 7831,
+                    "title": "Will Trump acquire Greenland before 2027?",
+                    "volume": 32554786.16031325
+                }
+            },
+            {
+                "id": 2216,
+                "name": "Trump Administration Trade",
+                "keywords": [
+                    "tariffs",
+                    "trump lower",
+                    "lower tariffs",
+                    "lower",
+                    "canada"
+                ],
+                "total_volume": 5065822.885036001,
+                "market_count": 11,
+                "top_market": {
+                    "id": 2757,
+                    "title": "Supreme Court rules in favor of Trump's tariffs?",
+                    "volume": 4095408.243135
+                }
+            },
+            {
+                "id": 2259,
+                "name": "Legislative Outcomes",
+                "keywords": [
+                    "act",
+                    "law",
+                    "save",
+                    "act law",
+                    "save act"
+                ],
+                "total_volume": 1234299.618762,
+                "market_count": 10,
+                "top_market": {
+                    "id": 9715,
+                    "title": "Clarity Act signed into law in 2026?",
+                    "volume": 533218.3608260003
+                }
+            },
+            {
+                "id": 2294,
+                "name": "Trump's",
+                "keywords": [
+                    "trump",
+                    "visit",
+                    "trump visit",
+                    "trump say",
+                    "say"
+                ],
+                "total_volume": 803177.1662689998,
+                "market_count": 13,
+                "top_market": {
+                    "id": 8145,
+                    "title": "Will Trump recognize Somaliland before 2027?",
+                    "volume": 151798.0429809999
+                }
+            },
+            {
+                "id": 2297,
+                "name": "Citizenship",
+                "keywords": [
+                    "citizenship",
+                    "citizenship revoked",
+                    "revoked",
+                    "zohran",
+                    "zohran mamdani"
+                ],
+                "total_volume": 218412.8243289987,
+                "market_count": 4,
+                "top_market": {
+                    "id": 6009748,
+                    "title": "SCOTUS strikes down Trump's Birthright Citizenship EO?",
+                    "volume": 107344.1789720001
+                }
+            }
+        ]
+    },
+    {
+        "id": 10,
+        "name": "Global",
+        "metadata": {
+            "cluster_count": 10
+        },
+        "total_volume": 165143673.36206517,
+        "cluster_count": 10,
+        "market_count": 277,
+        "clusters": [
+            {
+                "id": 2195,
+                "name": "Fed Interest",
+                "keywords": [
+                    "fed",
+                    "interest"
+                ],
+                "total_volume": 102581636.8305351,
+                "market_count": 14,
+                "top_market": {
+                    "id": 4994,
+                    "title": "Will the Fed decrease interest rates by 50+ bps after the April 2026 meeting?",
+                    "volume": 33968965.81767003
+                }
+            },
+            {
+                "id": 2220,
+                "name": "US",
+                "keywords": [
+                    "primary",
+                    "primary election",
+                    "governor",
+                    "governor democratic",
+                    "democratic primary"
+                ],
+                "total_volume": 42700952.92634007,
+                "market_count": 150,
+                "top_market": {
+                    "id": 3028,
+                    "title": "Will no Fed rate cuts happen in 2026?",
+                    "volume": 3179593.403079013
+                }
+            },
+            {
+                "id": 2226,
+                "name": "Federal Interest Rate",
+                "keywords": [
+                    "federal",
+                    "interest",
+                    "rate"
+                ],
+                "total_volume": 7495827.261387997,
+                "market_count": 26,
+                "top_market": {
+                    "id": 9736,
+                    "title": "Will the upper bound of the target federal funds rate be \u2265 4.5% at the end of 2026?",
+                    "volume": 2389303.500220999
+                }
+            },
+            {
+                "id": 2258,
+                "name": "Earthquake Frequency and Magnitude",
+                "keywords": [
+                    "earthquake",
+                    "frequency",
+                    "magnitude"
+                ],
+                "total_volume": 3662675.721131003,
+                "market_count": 17,
+                "top_market": {
+                    "id": 6936,
+                    "title": "10.0 or above earthquake before 2027?",
+                    "volume": 555197.5891660018
+                }
+            },
+            {
+                "id": 2243,
+                "name": "Economic & Regulatory",
+                "keywords": [
+                    "hike",
+                    "rate hike",
+                    "rate",
+                    "ecb rate",
+                    "hike 2026"
+                ],
+                "total_volume": 3086644.144200997,
+                "market_count": 10,
+                "top_market": {
+                    "id": 2948,
+                    "title": "US recession by end of 2026?",
+                    "volume": 1303658.306062997
+                }
+            },
+            {
+                "id": 2279,
+                "name": "Central",
+                "keywords": [
+                    "2026 meeting",
+                    "meeting",
+                    "rates",
+                    "bps",
+                    "bank"
+                ],
+                "total_volume": 2224208.373803,
+                "market_count": 22,
+                "top_market": {
+                    "id": 11038,
+                    "title": "Bank of Japan increases interest rates by 50+ bps after the April 2026 meeting?",
+                    "volume": 251510.08371
+                }
+            },
+            {
+                "id": 2266,
+                "name": "Federal Reserve",
+                "keywords": [
+                    "rate",
+                    "bound",
+                    "fed",
+                    "fed rate",
+                    "upper bound"
+                ],
+                "total_volume": 1921335.067604999,
+                "market_count": 13,
+                "top_market": {
+                    "id": 12433,
+                    "title": "Will the Fed Pause\u2013Cut\u2013Cut in the next three decisions (Mar\u2013Apr\u2013Jun)?",
+                    "volume": 408065.5650649997
+                }
+            },
+            {
+                "id": 2299,
+                "name": "Quarter",
+                "keywords": [
+                    "quarter"
+                ],
+                "total_volume": 695268.5327740002,
+                "market_count": 13,
+                "top_market": {
+                    "id": 8033,
+                    "title": "Will US GDP growth in Q1 2026 be between 3.0% and 3.5%?",
+                    "volume": 93192.14805900006
+                }
+            },
+            {
+                "id": 2269,
+                "name": "Canadian Political",
+                "keywords": [
+                    "canadian",
+                    "political"
+                ],
+                "total_volume": 454762.2609119986,
+                "market_count": 3,
+                "top_market": {
+                    "id": 4855,
+                    "title": "Will a province schedule a referendum to leave Canada before 2027?",
+                    "volume": 339519.5812149985
+                }
+            },
+            {
+                "id": 2311,
+                "name": "10-Year Treasury Yield Range",
+                "keywords": [
+                    "10-year",
+                    "treasury",
+                    "yield",
+                    "range"
+                ],
+                "total_volume": 320362.243376,
+                "market_count": 9,
+                "top_market": {
+                    "id": 5127,
+                    "title": "Will the 10-year Treasury yield hit 4.8% before 2027?",
+                    "volume": 44995.55398199997
+                }
+            }
+        ]
+    },
+    {
+        "id": 14,
+        "name": "Which & Countries",
+        "metadata": {
+            "cluster_count": 6
+        },
+        "total_volume": 136545495.96066484,
+        "cluster_count": 6,
+        "market_count": 106,
+        "clusters": [
+            {
+                "id": 2192,
+                "name": "Which countries will send warships through the Strait of Hormuz by April 30?",
+                "keywords": [
+                    "which",
+                    "countries",
+                    "send",
+                    "warships",
+                    "through"
+                ],
+                "total_volume": 72769541.02369872,
+                "market_count": 26,
+                "top_market": {
+                    "id": 4791,
+                    "title": "Will Iran close the Strait of Hormuz by March 31?",
+                    "volume": 58519433.93553476
+                }
+            },
+            {
+                "id": 2201,
+                "name": "East Asian Geopolitical Futures",
+                "keywords": [
+                    "taiwan",
+                    "china invade",
+                    "invade taiwan",
+                    "invade",
+                    "china"
+                ],
+                "total_volume": 27754828.89936398,
+                "market_count": 9,
+                "top_market": {
+                    "id": 761,
+                    "title": "Will China invade Taiwan by end of 2026?",
+                    "volume": 19597654.25094799
+                }
+            },
+            {
+                "id": 2218,
+                "name": "Ge",
+                "keywords": [
+                    "ge"
+                ],
+                "total_volume": 16117544.53786099,
+                "market_count": 39,
+                "top_market": {
+                    "id": 6010451,
+                    "title": "Will US withdraw from NATO by April 30?",
+                    "volume": 3362147.630862985
+                }
+            },
+            {
+                "id": 2207,
+                "name": "Cuba Invade 2026 Invade Economic",
+                "keywords": [
+                    "cuba",
+                    "invade",
+                    "2026 invade",
+                    "economic",
+                    "economic deal"
+                ],
+                "total_volume": 15624048.08522116,
+                "market_count": 17,
+                "top_market": {
+                    "id": 9262,
+                    "title": "Will the US acquire part of Greenland in 2026?",
+                    "volume": 9506765.687928025
+                }
+            },
+            {
+                "id": 2248,
+                "name": "Middle East Conflict",
+                "keywords": [
+                    "gulf state",
+                    "gulf",
+                    "military action",
+                    "action",
+                    "carry military"
+                ],
+                "total_volume": 3062332.019336002,
+                "market_count": 10,
+                "top_market": {
+                    "id": 3772836,
+                    "title": "Will the US officially declare war on Iran by April 30, 2026?",
+                    "volume": 1045227.735312005
+                }
+            },
+            {
+                "id": 2263,
+                "name": "Dipl",
+                "keywords": [
+                    "embassy",
+                    "embassy iran",
+                    "oslo embassy",
+                    "attack",
+                    "oslo"
+                ],
+                "total_volume": 1217201.395184,
+                "market_count": 5,
+                "top_market": {
+                    "id": 1049497,
+                    "title": "Will the US accuse Iran of Oslo Embassy attack?",
+                    "volume": 427900.9167479997
+                }
+            }
+        ]
+    },
+    {
+        "id": 9,
+        "name": "Geopol",
+        "metadata": {
+            "cluster_count": 4
+        },
+        "total_volume": 77698546.74719542,
+        "cluster_count": 4,
+        "market_count": 115,
+        "clusters": [
+            {
+                "id": 2199,
+                "name": "202",
+                "keywords": [
+                    "202"
+                ],
+                "total_volume": 64058522.79487935,
+                "market_count": 105,
+                "top_market": {
+                    "id": 5964,
+                    "title": "Will the US confirm that aliens exist before 2027?",
+                    "volume": 23127803.19979736
+                }
+            },
+            {
+                "id": 2209,
+                "name": "Strait of Hormuz traffic returns to normal by end of April?",
+                "keywords": [
+                    "strait",
+                    "hormuz",
+                    "traffic",
+                    "returns",
+                    "normal"
+                ],
+                "total_volume": 9851807.13649507,
+                "market_count": 3,
+                "top_market": {
+                    "id": 1396110,
+                    "title": "Strait of Hormuz traffic returns to normal by end of April?",
+                    "volume": 9016771.439942071
+                }
+            },
+            {
+                "id": 2234,
+                "name": "Future Human &",
+                "keywords": [
+                    "worldwide",
+                    "higher",
+                    "magnitude",
+                    "higher worldwide",
+                    "earthquakes magnitude"
+                ],
+                "total_volume": 2735533.315079013,
+                "market_count": 5,
+                "top_market": {
+                    "id": 9345,
+                    "title": "Human moon landing in 2026?",
+                    "volume": 1906578.040419013
+                }
+            },
+            {
+                "id": 2252,
+                "name": "Red Sea Shipping",
+                "keywords": [
+                    "strait",
+                    "hormuz",
+                    "strait hormuz",
+                    "hormuz april",
+                    "warships strait"
+                ],
+                "total_volume": 1052683.500741999,
+                "market_count": 2,
+                "top_market": {
+                    "id": 2248245,
+                    "title": "Bab el-Mandeb Strait effectively closed by April 30?",
+                    "volume": 913838.7573619992
+                }
+            }
+        ]
+    },
+    {
+        "id": 0,
+        "name": "Sports Match",
+        "metadata": {
+            "cluster_count": 6
+        },
+        "total_volume": 67498394.63543497,
+        "cluster_count": 6,
+        "market_count": 137,
+        "clusters": [
+            {
+                "id": 2221,
+                "name": "Esports Match Outcomes",
+                "keywords": [
+                    "bo3",
+                    "group",
+                    "counter strike",
+                    "counter",
+                    "lol"
+                ],
+                "total_volume": 22467052.01707698,
+                "market_count": 49,
+                "top_market": {
+                    "id": 6025990,
+                    "title": "Indian Premier League: Sunrisers Hyderabad vs Rajasthan Royals",
+                    "volume": 3035192.200442997
+                }
+            },
+            {
+                "id": 2232,
+                "name": "MLB Game Outcomes",
+                "keywords": [
+                    "mlb",
+                    "game",
+                    "outcomes"
+                ],
+                "total_volume": 19536776.34934499,
+                "market_count": 45,
+                "top_market": {
+                    "id": 6022834,
+                    "title": "Miami Marlins vs. Atlanta Braves",
+                    "volume": 2078044.161186
+                }
+            },
+            {
+                "id": 2217,
+                "name": "New York Mets vs. Los Angeles Dodgers",
+                "keywords": [
+                    "new",
+                    "york",
+                    "mets",
+                    "vs.",
+                    "los"
+                ],
+                "total_volume": 14314073.258334,
+                "market_count": 22,
+                "top_market": {
+                    "id": 6022842,
+                    "title": "New York Mets vs. Los Angeles Dodgers",
+                    "volume": 3667116.034529995
+                }
+            },
+            {
+                "id": 2237,
+                "name": "MLB Regular Season Matchups",
+                "keywords": [
+                    "vs",
+                    "angeles",
+                    "los",
+                    "los angeles",
+                    "sox vs"
+                ],
+                "total_volume": 5977351.296613009,
+                "market_count": 12,
+                "top_market": {
+                    "id": 6025426,
+                    "title": "Arizona Diamondbacks vs. Baltimore Orioles",
+                    "volume": 1622460.210668005
+                }
+            },
+            {
+                "id": 2222,
+                "name": "Cricket",
+                "keywords": [
+                    "super",
+                    "indian premier",
+                    "indian",
+                    "pakistan super",
+                    "super league"
+                ],
+                "total_volume": 4735994.368306996,
+                "market_count": 5,
+                "top_market": {
+                    "id": 6026002,
+                    "title": "Indian Premier League: Chennai Super Kings vs Kolkata Knight Riders",
+                    "volume": 2966688.632723004
+                }
+            },
+            {
+                "id": 2288,
+                "name": "Pakistan Super League",
+                "keywords": [
+                    "pakistan",
+                    "super",
+                    "league"
+                ],
+                "total_volume": 467147.3457589996,
+                "market_count": 4,
+                "top_market": {
+                    "id": 6026038,
+                    "title": "Pakistan Super League: Peshawar Zalmi vs Multan Sultans",
+                    "volume": 185938.6988359998
+                }
+            }
+        ]
+    },
+    {
+        "id": 5,
+        "name": "Tennis",
+        "metadata": {
+            "cluster_count": 15
+        },
+        "total_volume": 63210520.484721996,
+        "cluster_count": 15,
+        "market_count": 311,
+        "clusters": [
+            {
+                "id": 2253,
+                "name": "Barcelona Open",
+                "keywords": [
+                    "barcelona",
+                    "open"
+                ],
+                "total_volume": 12047090.61800601,
+                "market_count": 43,
+                "top_market": {
+                    "id": 6217303,
+                    "title": "Barcelona Open: Mariano Navone vs Andrey Rublev",
+                    "volume": 905471.7816760006
+                }
+            },
+            {
+                "id": 2229,
+                "name": "2026 Tennis Grand Slam Winners",
+                "keywords": [
+                    "2026",
+                    "tennis",
+                    "grand",
+                    "slam",
+                    "winners"
+                ],
+                "total_volume": 9774182.451241001,
+                "market_count": 57,
+                "top_market": {
+                    "id": 8579,
+                    "title": "Will Joao Fonseca win the 2026 Men's French Open?",
+                    "volume": 2229030.210316
+                }
+            },
+            {
+                "id": 2244,
+                "name": "2026 Wimbledon Singles Champions",
+                "keywords": [
+                    "2026",
+                    "wimbledon",
+                    "singles",
+                    "champions"
+                ],
+                "total_volume": 8459864.152288,
+                "market_count": 44,
+                "top_market": {
+                    "id": 8656,
+                    "title": "Will Novak Djokovic be the 2026 Men\u2019s Wimbledon winner?",
+                    "volume": 1234409.828718999
+                }
+            },
+            {
+                "id": 2246,
+                "name": "BMW",
+                "keywords": [
+                    "bmw open",
+                    "bmw",
+                    "open",
+                    "open qualification",
+                    "vs"
+                ],
+                "total_volume": 7996617.769474993,
+                "market_count": 31,
+                "top_market": {
+                    "id": 6321462,
+                    "title": "BMW Open: Emilio Nava vs Ben Shelton",
+                    "volume": 1097716.270909998
+                }
+            },
+            {
+                "id": 2235,
+                "name": "Monte",
+                "keywords": [
+                    "alcaraz vs",
+                    "alcaraz",
+                    "rolex monte",
+                    "rolex",
+                    "monte carlo"
+                ],
+                "total_volume": 7376144.090646999,
+                "market_count": 8,
+                "top_market": {
+                    "id": 6028834,
+                    "title": "Rolex Monte Carlo Masters: Joao Fonseca vs Alexander Zverev",
+                    "volume": 1881146.875067
+                }
+            },
+            {
+                "id": 2251,
+                "name": "Linz WTA Tennis Matches",
+                "keywords": [
+                    "linz",
+                    "austria ladies",
+                    "upper austria",
+                    "ladies",
+                    "ladies linz"
+                ],
+                "total_volume": 3567309.130666998,
+                "market_count": 8,
+                "top_market": {
+                    "id": 6240154,
+                    "title": "Upper Austria Ladies Linz: Mirra Andreeva vs Anastasia Potapova",
+                    "volume": 927861.174290999
+                }
+            },
+            {
+                "id": 2256,
+                "name": "Porsche Grand",
+                "keywords": [
+                    "tennis grand",
+                    "porsche",
+                    "porsche tennis",
+                    "tennis",
+                    "prix"
+                ],
+                "total_volume": 3115175.811303996,
+                "market_count": 23,
+                "top_market": {
+                    "id": 6382817,
+                    "title": "Porsche Tennis Grand Prix: Laura Siegemund vs Viktoriya Tomova",
+                    "volume": 644376.0433219977
+                }
+            },
+            {
+                "id": 2275,
+                "name": "Oeiras",
+                "keywords": [
+                    "oeiras",
+                    "vs",
+                    "rebecca sramkova",
+                    "hsin tseng",
+                    "hsin"
+                ],
+                "total_volume": 2590812.672596999,
+                "market_count": 32,
+                "top_market": {
+                    "id": 6241137,
+                    "title": "Oeiras 3: Gastao Elias vs Joel Schwaerzler",
+                    "volume": 272913.534976
+                }
+            },
+            {
+                "id": 2283,
+                "name": "Madrid Tennis Match",
+                "keywords": [
+                    "madrid",
+                    "tennis",
+                    "match"
+                ],
+                "total_volume": 1731172.878388,
+                "market_count": 14,
+                "top_market": {
+                    "id": 6025875,
+                    "title": "Madrid: Nikolas Sanchez Izquierdo vs Jurij Rodionov",
+                    "volume": 232706.7474760001
+                }
+            },
+            {
+                "id": 2277,
+                "name": "Tennis Tournament Matchups",
+                "keywords": [
+                    "tallahassee",
+                    "krueger vs",
+                    "krueger",
+                    "basavareddy",
+                    "basavareddy set"
+                ],
+                "total_volume": 1709251.555043,
+                "market_count": 19,
+                "top_market": {
+                    "id": 6293893,
+                    "title": "Tallahassee: Pedro Boscardin Dias vs Genaro Alberto Olivieri",
+                    "volume": 267823.4213410002
+                }
+            },
+            {
+                "id": 2265,
+                "name": "Mexico City Tennis Matches",
+                "keywords": [
+                    "mexico city",
+                    "mexico",
+                    "city",
+                    "napolitano",
+                    "city james"
+                ],
+                "total_volume": 1583450.301823996,
+                "market_count": 7,
+                "top_market": {
+                    "id": 6269013,
+                    "title": "Mexico City: James Duckworth vs Stefano Napolitano",
+                    "volume": 415398.9794699959
+                }
+            },
+            {
+                "id": 2271,
+                "name": "Santa Cruz Tennis",
+                "keywords": [
+                    "santa",
+                    "cruz",
+                    "tennis"
+                ],
+                "total_volume": 1298948.680411003,
+                "market_count": 8,
+                "top_market": {
+                    "id": 6293920,
+                    "title": "Santa Cruz: Eric Vanshelboim vs Santiago Rodriguez Taverna",
+                    "volume": 329513.6678580018
+                }
+            },
+            {
+                "id": 2290,
+                "name": "South American Challenger",
+                "keywords": [
+                    "south",
+                    "american",
+                    "challenger"
+                ],
+                "total_volume": 928294.2388730004,
+                "market_count": 9,
+                "top_market": {
+                    "id": 6030671,
+                    "title": "Campinas: Gonzalo Bueno vs Hernan Casanova",
+                    "volume": 178297.7967450005
+                }
+            },
+            {
+                "id": 2285,
+                "name": "Sarasota",
+                "keywords": [
+                    "sarasota",
+                    "yibing wu",
+                    "sarasota yibing",
+                    "yibing",
+                    "dostanic sarasota"
+                ],
+                "total_volume": 911569.0893049998,
+                "market_count": 6,
+                "top_market": {
+                    "id": 6030685,
+                    "title": "Sarasota: Hugo Dellien vs Darwin Blanch",
+                    "volume": 199965.8492280002
+                }
+            },
+            {
+                "id": 2300,
+                "name": "Combat",
+                "keywords": [
+                    "santa",
+                    "santa cruz",
+                    "cruz",
+                    "campinas",
+                    "gonzalo"
+                ],
+                "total_volume": 120637.044653,
+                "market_count": 2,
+                "top_market": {
+                    "id": 6081709,
+                    "title": "Jan Blachowicz vs. Carlos Ulberg",
+                    "volume": 93172.982041
+                }
+            }
+        ]
+    },
+    {
+        "id": 6,
+        "name": "Major Tech",
+        "metadata": {
+            "cluster_count": 4
+        },
+        "total_volume": 39091325.041039675,
+        "cluster_count": 4,
+        "market_count": 40,
+        "clusters": [
+            {
+                "id": 2204,
+                "name": "GTA VI",
+                "keywords": [
+                    "gta"
+                ],
+                "total_volume": 34880918.60382268,
+                "market_count": 12,
+                "top_market": {
+                    "id": 66,
+                    "title": "GTA VI released before June 2026?",
+                    "volume": 13564784.79984205
+                }
+            },
+            {
+                "id": 2250,
+                "name": "Claude AI",
+                "keywords": [
+                    "claude"
+                ],
+                "total_volume": 3424779.564216,
+                "market_count": 20,
+                "top_market": {
+                    "id": 454967,
+                    "title": "Will Claude 5 be released by April 30, 2026?",
+                    "volume": 1007847.020193001
+                }
+            },
+            {
+                "id": 2284,
+                "name": "GPT-5.5 released by...?",
+                "keywords": [
+                    "gpt-5.5",
+                    "released",
+                    "by..."
+                ],
+                "total_volume": 542828.00533,
+                "market_count": 5,
+                "top_market": {
+                    "id": 1393924,
+                    "title": "GPT-5.5 released by June 30, 2026?",
+                    "volume": 206636.029014
+                }
+            },
+            {
+                "id": 2292,
+                "name": "Grok AI",
+                "keywords": [
+                    "grok"
+                ],
+                "total_volume": 242798.8676709999,
+                "market_count": 3,
+                "top_market": {
+                    "id": 1033,
+                    "title": "Grok 5 released by March 31, 2026?",
+                    "volume": 163071.0726399999
+                }
+            }
+        ]
+    },
+    {
+        "id": 8,
+        "name": "Russia-",
+        "metadata": {
+            "cluster_count": 6
+        },
+        "total_volume": 37570577.76635296,
+        "cluster_count": 6,
+        "market_count": 68,
+        "clusters": [
+            {
+                "id": 2203,
+                "name": "Russia-Ukraine",
+                "keywords": [
+                    "russia capture",
+                    "capture",
+                    "russia",
+                    "2026 russia",
+                    "30 russia"
+                ],
+                "total_volume": 28493555.18890295,
+                "market_count": 15,
+                "top_market": {
+                    "id": 762,
+                    "title": "Russia x Ukraine ceasefire by end of 2026?",
+                    "volume": 14068337.83148704
+                }
+            },
+            {
+                "id": 2223,
+                "name": "Ukraine",
+                "keywords": [
+                    "ukraine",
+                    "russia ukraine",
+                    "russia",
+                    "ukraine ceasefire",
+                    "2026 russia"
+                ],
+                "total_volume": 5835486.617003001,
+                "market_count": 28,
+                "top_market": {
+                    "id": 693343,
+                    "title": "Russia strike impacts Kyiv municipality during week of March 2, 2026?",
+                    "volume": 2954169.855732
+                }
+            },
+            {
+                "id": 2245,
+                "name": "Nuclear Proliferation",
+                "keywords": [
+                    "weapon",
+                    "nuclear weapon",
+                    "nuclear",
+                    "test",
+                    "weapon detonation"
+                ],
+                "total_volume": 1443729.618411005,
+                "market_count": 6,
+                "top_market": {
+                    "id": 4932,
+                    "title": "Will Russia test a nuclear weapon by March 31 2026?",
+                    "volume": 1193185.201422005
+                }
+            },
+            {
+                "id": 2276,
+                "name": "Russian Military",
+                "keywords": [
+                    "russia enter",
+                    "enter",
+                    "30 russia",
+                    "russia",
+                    "30"
+                ],
+                "total_volume": 959549.3512020003,
+                "market_count": 8,
+                "top_market": {
+                    "id": 8083,
+                    "title": "Will Russia enter Druzkhivka by June 30?",
+                    "volume": 267973.8059170002
+                }
+            },
+            {
+                "id": 2270,
+                "name": "Territorial",
+                "keywords": [
+                    "territorial"
+                ],
+                "total_volume": 612716.9054280003,
+                "market_count": 7,
+                "top_market": {
+                    "id": 201,
+                    "title": "Will Russia capture Kostyantynivka by December 31, 2026?",
+                    "volume": 332742.4084470003
+                }
+            },
+            {
+                "id": 2296,
+                "name": "Russia Capture",
+                "keywords": [
+                    "russia",
+                    "capture"
+                ],
+                "total_volume": 225540.0854059995,
+                "market_count": 4,
+                "top_market": {
+                    "id": 2232047,
+                    "title": "Will Russia capture all of Huliaipole by April 30?",
+                    "volume": 114056.9268149996
+                }
+            }
+        ]
+    },
+    {
+        "id": 3,
+        "name": "Public Figures",
+        "metadata": {
+            "cluster_count": 9
+        },
+        "total_volume": 28086361.426562004,
+        "cluster_count": 9,
+        "market_count": 191,
+        "clusters": [
+            {
+                "id": 2255,
+                "name": "Elon Musk Tweet Volume",
+                "keywords": [
+                    "elon",
+                    "musk",
+                    "tweet",
+                    "volume"
+                ],
+                "total_volume": 20865542.428062,
+                "market_count": 136,
+                "top_market": {
+                    "id": 6216283,
+                    "title": "Will Elon Musk post <40 tweets from April 13 to April 15, 2026?",
+                    "volume": 695477.2954050006
+                }
+            },
+            {
+                "id": 2260,
+                "name": "MrBe",
+                "keywords": [
+                    "mrbe"
+                ],
+                "total_volume": 2891611.222709,
+                "market_count": 10,
+                "top_market": {
+                    "id": 6007153,
+                    "title": "Will MrBeast's next video get between 60 and 70 million views on week 1?",
+                    "volume": 502785.4264380004
+                }
+            },
+            {
+                "id": 2268,
+                "name": "Future Music Chart",
+                "keywords": [
+                    "future",
+                    "music",
+                    "chart"
+                ],
+                "total_volume": 1283141.583085,
+                "market_count": 9,
+                "top_market": {
+                    "id": 7787,
+                    "title": "Will Bruno Mars be the top Spotify artist for 2026?",
+                    "volume": 380847.1442419998
+                }
+            },
+            {
+                "id": 2286,
+                "name": "Celebrity",
+                "keywords": [
+                    "swift",
+                    "taylor swift",
+                    "taylor",
+                    "attend",
+                    "engaged"
+                ],
+                "total_volume": 1055812.413906001,
+                "market_count": 17,
+                "top_market": {
+                    "id": 2693,
+                    "title": "Taylor Swift pregnant before marriage?",
+                    "volume": 196454.6413390001
+                }
+            },
+            {
+                "id": 2257,
+                "name": "Public Information Release",
+                "keywords": [
+                    "public",
+                    "information",
+                    "release"
+                ],
+                "total_volume": 778517.7136500016,
+                "market_count": 4,
+                "top_market": {
+                    "id": 5517,
+                    "title": "Epstein client list released by June 30?",
+                    "volume": 572507.9676580016
+                }
+            },
+            {
+                "id": 2289,
+                "name": "Trump Truth Social Activity",
+                "keywords": [
+                    "trump",
+                    "truth",
+                    "social",
+                    "activity"
+                ],
+                "total_volume": 449233.257111,
+                "market_count": 6,
+                "top_market": {
+                    "id": 6076956,
+                    "title": "Will Donald Trump post 60-69 times on Truth Social from Feb 14-21?",
+                    "volume": 180091.1883
+                }
+            },
+            {
+                "id": 2273,
+                "name": "Epstein Dis",
+                "keywords": [
+                    "epstein",
+                    "dis"
+                ],
+                "total_volume": 410451.8088459998,
+                "market_count": 2,
+                "top_market": {
+                    "id": 14167,
+                    "title": "Will anyone be jailed over Epstein disclosures? ",
+                    "volume": 287058.2106849998
+                }
+            },
+            {
+                "id": 2303,
+                "name": "Music Industry",
+                "keywords": [
+                    "music",
+                    "industry"
+                ],
+                "total_volume": 210423.694181,
+                "market_count": 4,
+                "top_market": {
+                    "id": 8115,
+                    "title": "Will Kanye West release an album in 2026?",
+                    "volume": 79558.80527400003
+                }
+            },
+            {
+                "id": 2305,
+                "name": "Artist Artist 2026 Spotify Artist Spotify",
+                "keywords": [
+                    "artist",
+                    "artist 2026",
+                    "spotify artist",
+                    "spotify",
+                    "billboard"
+                ],
+                "total_volume": 141627.305012,
+                "market_count": 3,
+                "top_market": {
+                    "id": 692364,
+                    "title": "Jimmy Lai released by June 30?",
+                    "volume": 74684.82338500004
+                }
+            }
+        ]
+    },
+    {
+        "id": 4,
+        "name": "Tennis Tournaments",
+        "metadata": {
+            "cluster_count": 7
+        },
+        "total_volume": 14939881.635224992,
+        "cluster_count": 7,
+        "market_count": 96,
+        "clusters": [
+            {
+                "id": 2264,
+                "name": "Open Cap",
+                "keywords": [
+                    "open capfinances",
+                    "capfinances",
+                    "capfinances rouen",
+                    "rouen metropole",
+                    "rouen"
+                ],
+                "total_volume": 4577628.574768994,
+                "market_count": 31,
+                "top_market": {
+                    "id": 6240277,
+                    "title": "Open Capfinances Rouen Metropole: Hailey Baptiste vs Jessika Ponchet",
+                    "volume": 421956.1708009994
+                }
+            },
+            {
+                "id": 2228,
+                "name": "Busan Tennis",
+                "keywords": [
+                    "busan",
+                    "tennis"
+                ],
+                "total_volume": 3835291.650354999,
+                "market_count": 7,
+                "top_market": {
+                    "id": 6217200,
+                    "title": "Busan: Yi Zhou vs Pavel Kotov",
+                    "volume": 2243258.437215999
+                }
+            },
+            {
+                "id": 2236,
+                "name": "Busan Challenger",
+                "keywords": [
+                    "busan",
+                    "challenger"
+                ],
+                "total_volume": 2607259.443465,
+                "market_count": 10,
+                "top_market": {
+                    "id": 6217197,
+                    "title": "Busan: Ilya Ivashka vs Dane Sweeny",
+                    "volume": 1808003.585511999
+                }
+            },
+            {
+                "id": 2287,
+                "name": "Basketball",
+                "keywords": [
+                    "lions",
+                    "beijing",
+                    "vs",
+                    "tigers",
+                    "shanghai"
+                ],
+                "total_volume": 1776744.591626999,
+                "market_count": 28,
+                "top_market": {
+                    "id": 6283100,
+                    "title": "Guangdong Southern Tigers vs. Ningbo Rockets",
+                    "volume": 186213.2045479998
+                }
+            },
+            {
+                "id": 2274,
+                "name": "Wuning Tennis",
+                "keywords": [
+                    "wuning",
+                    "tennis"
+                ],
+                "total_volume": 1364343.757726,
+                "market_count": 12,
+                "top_market": {
+                    "id": 6216318,
+                    "title": "Wuning: Harry Wendelken vs Pavel Kotov",
+                    "volume": 279470.6772130001
+                }
+            },
+            {
+                "id": 2291,
+                "name": "W",
+                "keywords": [
+                    "w"
+                ],
+                "total_volume": 533732.6135430005,
+                "market_count": 5,
+                "top_market": {
+                    "id": 6217212,
+                    "title": "Wuning 2: Jie Cui vs Mikhail Kukushkin",
+                    "volume": 165896.9663150002
+                }
+            },
+            {
+                "id": 2295,
+                "name": "Bus",
+                "keywords": [
+                    "busan",
+                    "vs",
+                    "busan james",
+                    "sharipov",
+                    "james kent"
+                ],
+                "total_volume": 244881.0037400003,
+                "market_count": 3,
+                "top_market": {
+                    "id": 6217201,
+                    "title": "Busan: Soon-Woo Kwon vs Leandro Riedi",
+                    "volume": 143295.4051670002
+                }
+            }
+        ]
+    }
+]

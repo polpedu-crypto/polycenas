@@ -1,12 +1,19 @@
+import asyncio
+import json
 from contextlib import asynccontextmanager
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, BackgroundTasks, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from app.db.prisma_client import prisma, connect_db, disconnect_db
 from app.services.clustering_service import GraphRebuildService
 from app.services.correlation_service import analyze_cluster_correlations
+from app.services.llm_service import LLMService
+from app.services.simulation import orchestrator as sim_orchestrator
+from app.services.simulation.store import store as sim_store
 
 
 _rebuild_status: dict = {"running": False, "last_result": None}
@@ -54,7 +61,10 @@ async def _run_rebuild():
         result = await service.rebuild()
         _rebuild_status["last_result"] = result
     except Exception as e:
-        _rebuild_status["last_result"] = {"status": "failed", "error": str(e)}
+        import traceback
+        tb = traceback.format_exc()
+        print(f"REBUILD FAILED:\n{tb}", flush=True)
+        _rebuild_status["last_result"] = {"status": "failed", "error": str(e), "traceback": tb}
     finally:
         _rebuild_status["running"] = False
 
@@ -152,6 +162,166 @@ async def list_superclusters():
 
     result.sort(key=lambda x: x["total_volume"], reverse=True)
     return result
+
+
+# ---------------------------------------------------------------------------
+# OASIS-style Simulation (in-memory; SSE for live viewer)
+# ---------------------------------------------------------------------------
+
+
+class SimulationTriggerRequest(BaseModel):
+    agent_cap: Optional[int] = None
+    rounds: Optional[int] = None
+    synthesize_top_n: Optional[int] = None
+    cheap_model: Optional[str] = None
+    premium_model: Optional[str] = None
+
+
+@app.get("/oasis-simulation/superclusters")
+async def sim_list_superclusters():
+    """List every supercluster with market counts — used by the sim UI dropdown."""
+    superclusters = await prisma.supercluster.find_many()
+    clusters = await prisma.cluster.find_many(
+        where={"superClusterId": {"not": None}},
+        include={"clusterMarkets": True},
+    )
+    counts: Dict[int, int] = {}
+    for c in clusters:
+        if c.superClusterId is not None:
+            counts[c.superClusterId] = counts.get(c.superClusterId, 0) + len(c.clusterMarkets or [])
+    items = [
+        {
+            "id": sc.id,
+            "name": sc.name,
+            "market_count": counts.get(sc.id, 0),
+            "has_graph": counts.get(sc.id, 0) > 0,
+        }
+        for sc in superclusters
+    ]
+    items.sort(key=lambda x: -x["market_count"])
+    return {"superclusters": items}
+
+
+@app.post("/oasis-simulation/superclusters/{super_cluster_id}/run")
+async def sim_trigger(super_cluster_id: int, body: SimulationTriggerRequest):
+    sc = await prisma.supercluster.find_unique(where={"id": super_cluster_id})
+    if not sc:
+        raise HTTPException(status_code=404, detail=f"SuperCluster {super_cluster_id} not found")
+
+    overrides = body.model_dump(exclude_none=True)
+    config = sim_orchestrator.build_config(super_cluster_id, overrides)
+    run = sim_store.create(super_cluster_id=super_cluster_id, config=overrides)
+
+    llm = LLMService()
+    run.task = asyncio.create_task(sim_orchestrator.run_pipeline(run, config, llm))
+
+    return {
+        "status": "started",
+        "run_id": run.run_id,
+        "super_cluster_id": super_cluster_id,
+        "supercluster_name": sc.name,
+        "overrides": overrides,
+    }
+
+
+@app.get("/oasis-simulation/runs")
+async def sim_list_all_runs():
+    return {"runs": sim_store.list()}
+
+
+@app.get("/oasis-simulation/superclusters/{super_cluster_id}/runs")
+async def sim_list_runs(super_cluster_id: int, limit: int = Query(20, ge=1, le=100)):
+    all_runs = sim_store.list()
+    filtered = [r for r in all_runs if r["super_cluster_id"] == super_cluster_id][:limit]
+    return {"super_cluster_id": super_cluster_id, "runs": filtered}
+
+
+@app.get("/oasis-simulation/runs/{run_id}")
+async def sim_get_run(run_id: str):
+    run = sim_store.get(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    snap = run.snapshot()
+    return {
+        "run": {
+            k: snap[k]
+            for k in ("run_id", "super_cluster_id", "status", "current_step",
+                      "rounds_completed", "started_at", "completed_at",
+                      "error", "config", "agent_count", "action_count", "hedge_count")
+        },
+        "agents": snap["agents"],
+        "hedges": snap["hedges"],
+    }
+
+
+@app.get("/oasis-simulation/runs/{run_id}/actions")
+async def sim_get_actions(
+    run_id: str,
+    after_sequence: int = Query(0, ge=0),
+    limit: int = Query(500, ge=1, le=2000),
+):
+    run = sim_store.get(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    filtered = [a.to_dict() for a in run.actions if a.sequence > after_sequence][:limit]
+    return {
+        "run_id": run_id,
+        "after_sequence": after_sequence,
+        "count": len(filtered),
+        "actions": filtered,
+    }
+
+
+@app.get("/oasis-simulation/runs/{run_id}/stream")
+async def sim_stream(run_id: str):
+    """Server-Sent Events stream: live actions, step updates, hedges.
+
+    Sends a backfill snapshot first (status + existing actions/agents/hedges),
+    then streams new events as they happen. Client should reconnect if the
+    connection drops — backfill is idempotent.
+    """
+    run = sim_store.get(run_id)
+    if not run:
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+
+    queue = run.subscribe()
+
+    async def event_gen():
+        try:
+            snap = run.snapshot()
+            yield _sse("snapshot", {
+                "run_id": run.run_id,
+                "status": snap["status"],
+                "current_step": snap["current_step"],
+                "rounds_completed": snap["rounds_completed"],
+                "agents": snap["agents"],
+                "actions": snap["actions"],
+                "hedges": snap["hedges"],
+            })
+            while True:
+                if run.status in ("completed", "failed") and queue.empty():
+                    yield _sse("end", {"status": run.status})
+                    break
+                try:
+                    msg = await asyncio.wait_for(queue.get(), timeout=15.0)
+                except asyncio.TimeoutError:
+                    yield ": keepalive\n\n"
+                    continue
+                yield _sse(msg.get("type", "message"), msg)
+                if msg.get("type") == "end":
+                    break
+        finally:
+            run.unsubscribe(queue)
+
+    return StreamingResponse(
+        event_gen(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+def _sse(event: str, data: Any) -> str:
+    return f"event: {event}\ndata: {json.dumps(data, default=str)}\n\n"
 
 
 @app.get("/superclusters/{supercluster_id}")
