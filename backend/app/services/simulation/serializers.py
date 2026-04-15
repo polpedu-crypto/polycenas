@@ -5,50 +5,46 @@ the admin UI consumes. Field names and nullability mirror
 
 from __future__ import annotations
 
-from dataclasses import asdict
 from typing import Any, Dict
 
 from .store import SimulationRunState
 from .types import AgentAction, SynthesizedHedge
 
 
-def serialize_run_summary(run: SimulationRunState) -> Dict[str, Any]:
+def serialize_run(run: SimulationRunState) -> Dict[str, Any]:
+    cfg = run.config or {}
     return {
-        "run_id": run.run_id,
+        "id": run.run_id,
         "super_cluster_id": run.super_cluster_id,
         "status": run.status,
-        "current_step": run.current_step,
+        "agent_count": len(run.agents),
+        "market_count": len(run.agents),
+        "rounds": cfg.get("rounds", 5),
+        "platform_type": cfg.get("platform_type", "reddit"),
+        "cheap_model": cfg.get("cheap_model", "gemini-2.5-flash"),
+        "premium_model": cfg.get("premium_model", "gemini-2.5-pro"),
+        "synthesis_model": cfg.get("synthesis_model", "gemini-2.5-pro"),
+        "canonical_graph_id": None,
+        "simulation_graph_id": None,
         "started_at": run.started_at,
         "completed_at": run.completed_at,
-        "agent_count": len(run.agents),
-        "action_count": len(run.actions),
-        "hedge_count": len(run.hedges),
+        "error_message": run.error,
+        "total_llm_calls": None,
+        "total_cost_usd": None,
+        "created_at": run.created_at,
     }
-
-
-def serialize_run_detail(run: SimulationRunState) -> Dict[str, Any]:
-    return {
-        **serialize_run_summary(run),
-        "rounds_completed": run.rounds_completed,
-        "error": run.error,
-        "config": run.config,
-    }
-
-
-def serialize_agent(agent) -> Dict[str, Any]:
-    return asdict(agent)
 
 
 def serialize_action(action: AgentAction) -> Dict[str, Any]:
     return {
         "id": action.id,
-        "round_number": action.round_number,
         "sequence": action.sequence,
+        "round": action.round_number,
         "agent_market_id": action.agent_market_id,
         "agent_name": action.agent_name,
         "action_type": action.action_type,
-        "target_market_id": action.target_market_id,
         "parent_action_id": action.parent_action_id,
+        "target_market_id": action.target_market_id,
         "title": action.title,
         "content": action.content,
         "stance": action.stance,

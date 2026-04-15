@@ -199,6 +199,12 @@ export default function DashboardPage() {
                         >
                             Multibets
                         </Link>
+                        <Link
+                            href="/oasis-simulation/runs"
+                            className="px-3 py-1.5 rounded-full hover:bg-neutral-100 text-gray-700"
+                        >
+                            Simulation
+                        </Link>
                     </nav>
                     <div className="ml-auto text-xs text-gray-500">
                         {loading && runs.length === 0 ? 'Loading…' : `${runs.length} runs · ${clusters.length} clusters`}

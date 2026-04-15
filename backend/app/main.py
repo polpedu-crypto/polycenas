@@ -246,16 +246,22 @@ async def sim_trigger(super_cluster_id: int, body: SimulationTriggerRequest):
 
     return {
         "status": "started",
-        "run_id": run.run_id,
         "super_cluster_id": super_cluster_id,
         "supercluster_name": sc.name,
     }
 
 
 @app.get("/oasis-simulation/runs")
-async def sim_list_all_runs(limit: int = Query(50, ge=1, le=200)):
-    runs = sim_store.list()[:limit]
-    return {"runs": [sim_serializers.serialize_run_summary(r) for r in runs]}
+async def sim_list_all_runs(
+    limit: int = Query(100, ge=1, le=500),
+):
+    """All runs across every supercluster (in-memory, no DB hit)."""
+    runs = sorted(
+        sim_store.list(),
+        key=lambda r: r.started_at or "",
+        reverse=True,
+    )[:limit]
+    return {"runs": [sim_serializers.serialize_run(r) for r in runs]}
 
 
 @app.get("/oasis-simulation/superclusters/{super_cluster_id}/runs")
@@ -264,7 +270,7 @@ async def sim_list_runs_for_sc(
     limit: int = Query(20, ge=1, le=100),
 ):
     runs = [r for r in sim_store.list() if r.super_cluster_id == super_cluster_id][:limit]
-    return {"runs": [sim_serializers.serialize_run_summary(r) for r in runs]}
+    return {"runs": [sim_serializers.serialize_run(r) for r in runs]}
 
 
 @app.get("/oasis-simulation/runs/{run_id}")
@@ -273,8 +279,7 @@ async def sim_get_run(run_id: str):
     if not run:
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
     return {
-        "run": sim_serializers.serialize_run_detail(run),
-        "agents": [sim_serializers.serialize_agent(a) for a in run.agents],
+        "run": sim_serializers.serialize_run(run),
         "hedges": [sim_serializers.serialize_hedge(h, run.run_id) for h in run.hedges],
     }
 

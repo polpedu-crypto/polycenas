@@ -57,6 +57,50 @@ export interface AgentAction {
 
 export type HedgeStatus = 'pending' | 'approved' | 'rejected'
 
+export interface HedgeMatrixCombo {
+    label: string
+    side_a: 'YES' | 'NO'
+    side_b: 'YES' | 'NO'
+    price_a: number
+    price_b: number
+    scenarios: Record<string, { profit_usd: number; return_pct?: number; indep_prob?: number }>
+    expected_profit_usd: number
+    worst_case_profit_usd: number
+    best_case_profit_usd: number
+}
+
+export interface HedgeMatrix {
+    prob_a: number
+    prob_b: number
+    stake_per_leg_usd: number
+    total_stake_usd: number
+    combos: HedgeMatrixCombo[]
+    best_hedge_label: string
+    best_hedge_worst_case_usd: number
+}
+
+export interface StructuredHedgePayload {
+    context?: { real_world_summary?: string; correlation_mechanism?: string }
+    hedge_rationale?: {
+        why_hedge?: string
+        profit_paths?: { scenario: string; profit_usd?: number; explanation: string }[]
+        loss_paths?: { scenario: string; profit_usd?: number; explanation: string }[]
+        impossible_outcomes?: { scenario: string; reason: string }[]
+    }
+    recommended_bet?: {
+        combo: string
+        leg_a: { market_id: number; side: 'YES' | 'NO'; price: number; stake_usd: number }
+        leg_b: { market_id: number; side: 'YES' | 'NO'; price: number; stake_usd: number }
+        total_stake_usd?: number
+        expected_profit_usd?: number
+        worst_case_usd?: number
+        best_case_usd?: number
+    }
+    confidence_score?: number
+    direction?: string
+    key_factors?: string[]
+}
+
 /** Matches `serialize_hedge`. */
 export interface SynthesizedHedge {
     id: number
@@ -84,11 +128,11 @@ export interface SynthesizedHedge {
     reviewed_at: string | null
     reviewed_by: string | null
     created_at: string
-    hedge_matrix: any | null
-    structured_payload: any | null
+    hedge_matrix: HedgeMatrix | null
+    structured_payload: StructuredHedgePayload | null
     matrix_verified: boolean | null
     recommended_combo: string | null
-    input_snapshot: any | null
+    input_snapshot: Record<string, unknown> | null
 }
 
 export interface RunDetail {
@@ -110,17 +154,39 @@ export const simulationApi = {
         return response.data.runs
     },
 
-    /** Fan-out: list every supercluster then aggregate their runs. */
-    async listAllRuns(): Promise<RunSummary[]> {
-        const superclusters = await simulationApi.listSuperclusters()
-        const lists = await Promise.all(
-            superclusters
-                .filter((s) => s.has_graph)
-                .map((s) => simulationApi.listRunsForSupercluster(s.id).catch(() => [] as RunSummary[]))
-        )
-        const all = lists.flat()
-        all.sort((a, b) => (b.started_at || '').localeCompare(a.started_at || ''))
-        return all
+    async listAllRuns(limit = 100): Promise<RunSummary[]> {
+        try {
+            const response = await axios.get('/oasis-simulation/runs', { params: { limit } })
+            return response.data.runs
+        } catch (error) {
+            // Compatibility fallback:
+            // Some backend variants expose only per-supercluster run listing.
+            const isMissingGlobalRunsRoute =
+                axios.isAxiosError(error) && error.response?.status === 404
+
+            if (!isMissingGlobalRunsRoute) throw error
+
+            const superclusters = await simulationApi.listSuperclusters()
+            const perCluster = await Promise.all(
+                superclusters.map((sc) =>
+                    simulationApi
+                        .listRunsForSupercluster(sc.id, limit)
+                        .catch(() => [] as RunSummary[])
+                )
+            )
+
+            const merged = perCluster.flat()
+            const deduped = new Map<string, RunSummary>()
+            for (const run of merged) deduped.set(run.id, run)
+
+            const sorted = Array.from(deduped.values()).sort((a, b) => {
+                const aTs = Date.parse(a.created_at || a.started_at || '')
+                const bTs = Date.parse(b.created_at || b.started_at || '')
+                return (Number.isNaN(bTs) ? 0 : bTs) - (Number.isNaN(aTs) ? 0 : aTs)
+            })
+
+            return sorted.slice(0, limit)
+        }
     },
 
     async getRun(runId: string): Promise<RunDetail> {
@@ -143,6 +209,7 @@ export const simulationApi = {
             synthesize_top_n: number
             cheap_model: string
             premium_model: string
+            synthesis_model: string
         }> = {}
     ): Promise<{ status: string; super_cluster_id: number; supercluster_name: string }> {
         const response = await axios.post(
@@ -151,6 +218,49 @@ export const simulationApi = {
         )
         return response.data
     },
+
+    async reviewHedge(
+        hedgeId: number,
+        action: 'approve' | 'reject',
+        adminNotes?: string,
+        reviewedBy?: string
+    ): Promise<SynthesizedHedge> {
+        const response = await axios.post(`/oasis-simulation/hedges/${hedgeId}/review`, {
+            action,
+            admin_notes: adminNotes,
+            reviewed_by: reviewedBy,
+        })
+        return response.data
+    },
+
+    async resynthesizeHedge(
+        hedgeId: number,
+        synthesisModel?: string
+    ): Promise<SynthesizedHedge> {
+        const response = await axios.post(
+            `/oasis-simulation/hedges/${hedgeId}/resynthesize`,
+            synthesisModel ? { synthesis_model: synthesisModel } : {}
+        )
+        return response.data
+    },
+
+    async patchHedgePayload(
+        hedgeId: number,
+        payload: Record<string, unknown>
+    ): Promise<SynthesizedHedge> {
+        const response = await axios.post(`/oasis-simulation/hedges/${hedgeId}/payload`, {
+            structured_payload: payload,
+        })
+        return response.data
+    },
+}
+
+/** Build the WebSocket URL for the live action stream. Protocol-aware. */
+export function simulationFeedUrl(runId: string): string {
+    const baseUrl = (axios.defaults.baseURL || 'http://localhost:8000') as string
+    const httpUrl = baseUrl.startsWith('http') ? baseUrl : `http://${baseUrl}`
+    const wsUrl = httpUrl.replace(/^http/, 'ws')
+    return `${wsUrl}/ws/simulation/${runId}`
 }
 
 // ───────────────────────── Multibets (hedge view) ─────────────────
