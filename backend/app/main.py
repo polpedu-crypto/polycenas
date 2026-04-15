@@ -1,5 +1,7 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, BackgroundTasks, HTTPException
+from typing import Optional
+
+from fastapi import FastAPI, BackgroundTasks, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.db.prisma_client import prisma, connect_db, disconnect_db
@@ -177,3 +179,62 @@ async def get_supercluster(supercluster_id: int):
         "market_count": total_markets,
         "clusters": formatted,
     }
+
+
+@app.get("/clusters")
+async def list_clusters(
+    supercluster_id: Optional[int] = Query(None, description="Filter to a single super-cluster"),
+    search: Optional[str] = Query(None, description="Case-insensitive name/keyword match"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+):
+    """List clusters with pagination and optional super-cluster / search filters."""
+    where: dict = {}
+    if supercluster_id is not None:
+        where["superClusterId"] = supercluster_id
+    if search:
+        where["OR"] = [
+            {"name": {"contains": search, "mode": "insensitive"}},
+            {"keywords": {"has": search.lower()}},
+        ]
+
+    total = await prisma.cluster.count(where=where or None)
+    clusters = await prisma.cluster.find_many(
+        where=where or None,
+        include={"clusterMarkets": {"include": {"market": True}}},
+        skip=skip,
+        take=limit,
+        order={"totalVolume": "desc"},
+    )
+
+    data = [_format_cluster(c) for c in clusters]
+    return {
+        "data": data,
+        "pagination": {
+            "skip": skip,
+            "limit": limit,
+            "total": total,
+            "hasMore": skip + limit < total,
+        },
+    }
+
+
+@app.get("/clusters/{cluster_id}")
+async def get_cluster(cluster_id: int):
+    """Return a single cluster with its markets."""
+    cluster = await prisma.cluster.find_unique(
+        where={"id": cluster_id},
+        include={"clusterMarkets": {"include": {"market": True}}},
+    )
+    if not cluster:
+        raise HTTPException(status_code=404, detail=f"Cluster {cluster_id} not found")
+
+    result = _format_cluster(cluster, include_markets=True)
+    result["supercluster_id"] = cluster.superClusterId
+    result["centroid"] = (
+        {"x": cluster.centroidX, "y": cluster.centroidY}
+        if cluster.centroidX is not None and cluster.centroidY is not None
+        else None
+    )
+    result["category"] = cluster.category
+    return result
