@@ -509,6 +509,244 @@ async def get_cluster(cluster_id: int):
     return result
 
 
+def _serialize_inference(inference) -> dict:
+    """Serialize a MultibetInference row for API responses."""
+    result = {
+        "id": inference.id,
+        "clusterId": inference.clusterId,
+        "confidenceScore": inference.confidenceScore,
+        "direction": inference.direction,
+        "marketAId": inference.marketAId,
+        "marketBId": inference.marketBId,
+        "marketATitle": inference.marketATitle,
+        "marketBTitle": inference.marketBTitle,
+        "marketAEventTitle": inference.marketAEventTitle,
+        "marketBEventTitle": inference.marketBEventTitle,
+        "reasoning": inference.reasoning,
+        "keyFactors": inference.keyFactors,
+        "correlationR": inference.correlationR,
+        "newsOverlap": inference.newsOverlap,
+        "featureOverlap": inference.featureOverlap,
+        "status": inference.status,
+        "adminNotes": inference.adminNotes,
+        "reviewedAt": inference.reviewedAt.isoformat() if inference.reviewedAt else None,
+        "reviewedBy": inference.reviewedBy,
+        "createdAt": inference.createdAt.isoformat(),
+        "updatedAt": inference.updatedAt.isoformat(),
+    }
+    if hasattr(inference, "cluster") and inference.cluster:
+        result["clusterName"] = inference.cluster.name
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Multibets
+# ---------------------------------------------------------------------------
+
+
+class MultibetReviewRequest(BaseModel):
+    action: str
+    admin_notes: Optional[str] = None
+    reviewed_by: Optional[str] = None
+
+
+@app.get("/multibets/approved-clusters")
+async def get_approved_cluster_ids():
+    """Cluster IDs with approved multibet inferences (for map view)."""
+    inferences = await prisma.multibetinference.find_many(
+        where={"status": "approved"},
+    )
+    return {
+        "clusterIds": [inf.clusterId for inf in inferences],
+        "clusters": [
+            {"clusterId": inf.clusterId, "confidenceScore": inf.confidenceScore}
+            for inf in inferences
+        ],
+    }
+
+
+@app.get("/multibets/admin/pending")
+async def get_pending_inferences(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+):
+    """Paginated pending inferences for admin review."""
+    total = await prisma.multibetinference.count(where={"status": "pending"})
+    inferences = await prisma.multibetinference.find_many(
+        where={"status": "pending"},
+        order={"createdAt": "desc"},
+        skip=skip,
+        take=limit,
+        include={"cluster": True},
+    )
+    return {
+        "data": [_serialize_inference(inf) for inf in inferences],
+        "pagination": {
+            "skip": skip,
+            "limit": limit,
+            "total": total,
+            "hasMore": skip + limit < total,
+        },
+    }
+
+
+@app.get("/multibets/admin/all")
+async def get_all_inferences(
+    status: Optional[str] = Query(None, description="pending | approved | rejected | no_cross_events"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+):
+    """Paginated inferences with optional status filter."""
+    if status and status not in ("pending", "approved", "rejected", "no_cross_events"):
+        raise HTTPException(
+            status_code=400,
+            detail="status must be one of: pending, approved, rejected, no_cross_events",
+        )
+    where: dict = {}
+    if status:
+        where["status"] = status
+    total = await prisma.multibetinference.count(where=where or None)
+    inferences = await prisma.multibetinference.find_many(
+        where=where or None,
+        order={"createdAt": "desc"},
+        skip=skip,
+        take=limit,
+        include={"cluster": True},
+    )
+    return {
+        "data": [_serialize_inference(inf) for inf in inferences],
+        "pagination": {
+            "skip": skip,
+            "limit": limit,
+            "total": total,
+            "hasMore": skip + limit < total,
+        },
+    }
+
+
+@app.get("/multibets/admin/clusters")
+async def get_clusters_for_analysis(
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+    search: Optional[str] = Query(None, description="Search by cluster name or keywords"),
+):
+    """Clusters with analysis status flags for the admin panel."""
+    where_clause: dict = {}
+    clusters = await prisma.cluster.find_many(
+        where=where_clause or None,
+        include={
+            "multibetInference": True,
+            "clusterMarkets": True,
+        },
+        skip=skip,
+        take=limit,
+        order={"totalVolume": "desc"},
+    )
+    total = await prisma.cluster.count(where=where_clause or None)
+
+    if search:
+        sl = search.lower()
+        clusters = [
+            c for c in clusters
+            if (c.name and sl in c.name.lower())
+            or any(sl in kw.lower() for kw in (c.keywords or []))
+        ]
+
+    result = []
+    for cluster in clusters:
+        multibet_status = None
+        multibet_score = None
+        if cluster.multibetInference:
+            multibet_status = cluster.multibetInference.status
+            multibet_score = cluster.multibetInference.confidenceScore
+        result.append({
+            "id": cluster.id,
+            "name": cluster.name,
+            "keywords": cluster.keywords[:5] if cluster.keywords else [],
+            "totalVolume": cluster.totalVolume,
+            "marketCount": len(cluster.clusterMarkets) if cluster.clusterMarkets else 0,
+            "multibetStatus": multibet_status,
+            "multibetScore": multibet_score,
+        })
+
+    return {
+        "data": result,
+        "pagination": {
+            "skip": skip,
+            "limit": limit,
+            "total": total,
+            "hasMore": skip + limit < total,
+        },
+    }
+
+
+@app.get("/multibets/admin/{cluster_id}/details")
+async def get_inference_details(cluster_id: int):
+    """Full inference details including inputSnapshot for admin review."""
+    inference = await prisma.multibetinference.find_unique(
+        where={"clusterId": cluster_id},
+        include={"cluster": True},
+    )
+    if not inference:
+        raise HTTPException(status_code=404, detail=f"No inference found for cluster {cluster_id}")
+
+    result = _serialize_inference(inference)
+    if inference.inputSnapshot:
+        snapshot = inference.inputSnapshot
+        if isinstance(snapshot, str):
+            snapshot = json.loads(snapshot)
+        result["inputSnapshot"] = snapshot
+    return result
+
+
+@app.post("/multibets/admin/{cluster_id}/review")
+async def review_inference(cluster_id: int, body: MultibetReviewRequest):
+    """Approve or reject an inference."""
+    if body.action not in ("approve", "reject"):
+        raise HTTPException(status_code=400, detail="action must be 'approve' or 'reject'")
+
+    try:
+        inference = await prisma.multibetinference.update(
+            where={"clusterId": cluster_id},
+            data={
+                "status": "approved" if body.action == "approve" else "rejected",
+                "reviewedAt": datetime.now(timezone.utc),
+                "reviewedBy": body.reviewed_by,
+                "adminNotes": body.admin_notes,
+            },
+        )
+    except Exception:
+        raise HTTPException(status_code=404, detail=f"No inference found for cluster {cluster_id}")
+
+    return _serialize_inference(inference)
+
+
+@app.get("/multibets/{cluster_id}")
+async def get_multibet(cluster_id: int):
+    """Get approved multibet for a cluster (user-facing)."""
+    inference = await prisma.multibetinference.find_unique(
+        where={"clusterId": cluster_id},
+        include={"cluster": True},
+    )
+    if not inference or inference.status != "approved":
+        return None
+    return _serialize_inference(inference)
+
+
+@app.get("/multibets/{cluster_id}/status")
+async def get_multibet_status(cluster_id: int):
+    """Check multibet inference status for a cluster."""
+    inference = await prisma.multibetinference.find_unique(
+        where={"clusterId": cluster_id},
+    )
+    return {
+        "cluster_id": cluster_id,
+        "has_inference": inference is not None,
+        "inference_status": inference.status if inference else None,
+        "confidence_score": inference.confidenceScore if inference else None,
+    }
+
+
 @app.get("/clusters/{cluster_id}/multibets")
 async def list_cluster_multibets(
     cluster_id: int,
@@ -519,49 +757,42 @@ async def list_cluster_multibets(
     skip: int = Query(0, ge=0),
     limit: int = Query(100, ge=1, le=500),
 ):
-    """List synthesized multibets that reference the given cluster."""
-    cluster = await prisma.cluster.find_unique(where={"id": cluster_id})
+    """Full multibet inference for a cluster — DB-backed with complete fields."""
+    cluster = await prisma.cluster.find_unique(
+        where={"id": cluster_id},
+        include={"multibetInference": True},
+    )
     if not cluster:
         raise HTTPException(status_code=404, detail=f"Cluster {cluster_id} not found")
 
-    if status and status not in ("pending", "approved", "rejected"):
-        raise HTTPException(
-            status_code=400,
-            detail="status must be one of: pending, approved, rejected",
-        )
+    inf = cluster.multibetInference
+    if not inf:
+        return {
+            "cluster_id": cluster_id,
+            "data": [],
+            "pagination": {"skip": skip, "limit": limit, "total": 0, "hasMore": False},
+        }
 
-    rows = []
-    for run in sim_store.list():
-        for hedge in run.hedges:
-            if cluster_id not in (hedge.market_a_cluster_id, hedge.market_b_cluster_id):
-                continue
-            if status and hedge.status != status:
-                continue
+    if status and inf.status != status:
+        return {
+            "cluster_id": cluster_id,
+            "data": [],
+            "pagination": {"skip": skip, "limit": limit, "total": 0, "hasMore": False},
+        }
 
-            item = sim_serializers.serialize_hedge(hedge, run.run_id)
-            item["run_status"] = run.status
-            item["run_started_at"] = run.started_at
-            item["run_completed_at"] = run.completed_at
-            rows.append(item)
+    serialized = _serialize_inference(inf)
+    serialized["clusterName"] = cluster.name
 
-    rows.sort(
-        key=lambda h: (
-            h.get("confidence_score") if h.get("confidence_score") is not None else -1,
-            h.get("created_at") or "",
-        ),
-        reverse=True,
-    )
-
-    total = len(rows)
-    paged_rows = rows[skip: skip + limit]
+    data = [serialized] if skip == 0 else []
+    total = 1
     return {
         "cluster_id": cluster_id,
-        "data": paged_rows,
+        "data": data,
         "pagination": {
             "skip": skip,
             "limit": limit,
             "total": total,
-            "hasMore": skip + limit < total,
+            "hasMore": False,
         },
     }
 

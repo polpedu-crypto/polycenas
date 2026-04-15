@@ -211,16 +211,13 @@ Return a single cluster with its markets.
 
 ### `GET /clusters/{cluster_id}/multibets`
 
-List synthesized multibets (hedges) associated with a cluster.
-
-Association rule: a multibet is included when either `market_a_cluster_id` or
-`market_b_cluster_id` equals the provided `cluster_id`.
+Full DB-backed multibet inference for a cluster.
 
 **Path params:**
 - `cluster_id` (int) — Cluster ID
 
 **Query params:**
-- `status` (string, optional) — one of `pending`, `approved`, `rejected`
+- `status` (string, optional) — `pending`, `approved`, `rejected`
 - `skip` (int, default `0`) — pagination offset
 - `limit` (int, default `100`, max `500`) — page size
 
@@ -231,31 +228,163 @@ Association rule: a multibet is included when either `market_a_cluster_id` or
   "data": [
     {
       "id": 12,
-      "simulation_run_id": "43eef8f0-e61b-45c8-8600-16a963df90c8",
-      "rank": 1,
-      "market_a_id": 66,
-      "market_b_id": 1033,
-      "market_a_cluster_id": 142,
-      "market_b_cluster_id": 2292,
-      "confidence_score": 72,
+      "clusterId": 142,
+      "clusterName": "Republican Primary Candidates",
+      "confidenceScore": 72.0,
+      "direction": "positive",
+      "marketAId": 501,
+      "marketBId": 502,
+      "marketATitle": "Will Trump win the 2026 Republican nomination?",
+      "marketBTitle": "Will DeSantis win the 2026 Republican nomination?",
+      "marketAEventTitle": "2026 Republican Primary",
+      "marketBEventTitle": "2026 Republican Primary — Florida",
+      "reasoning": "Both markets track Republican primary outcomes...",
+      "keyFactors": ["shared voter base", "primary calendar overlap"],
+      "correlationR": 0.83,
+      "newsOverlap": 3,
+      "featureOverlap": 2,
       "status": "pending",
-      "run_status": "completed",
-      "run_started_at": "2026-04-15T13:26:11.123",
-      "run_completed_at": "2026-04-15T13:26:45.987"
+      "adminNotes": null,
+      "reviewedAt": null,
+      "reviewedBy": null,
+      "createdAt": "2026-04-15T12:00:00+00:00",
+      "updatedAt": "2026-04-15T12:00:00+00:00"
     }
   ],
   "pagination": { "skip": 0, "limit": 100, "total": 1, "hasMore": false }
 }
 ```
 
-**Response** `400`
-```json
-{ "detail": "status must be one of: pending, approved, rejected" }
-```
-
 **Response** `404`
 ```json
 { "detail": "Cluster 99 not found" }
+```
+
+---
+
+## Multibets
+
+Cross-event multibet inference endpoints. All routes are prefixed `/multibets`.
+
+### `GET /multibets/approved-clusters`
+
+Cluster IDs with approved multibet inferences (for map view).
+
+**Response** `200`
+```json
+{
+  "clusterIds": [142, 305],
+  "clusters": [
+    { "clusterId": 142, "confidenceScore": 72.0 },
+    { "clusterId": 305, "confidenceScore": 65.0 }
+  ]
+}
+```
+
+### `GET /multibets/{cluster_id}`
+
+Get the approved multibet for a cluster (user-facing). Returns `null` if none approved.
+
+**Path params:**
+- `cluster_id` (int)
+
+**Response** `200` — full serialized inference (same shape as admin detail, minus `inputSnapshot`)
+
+### `GET /multibets/{cluster_id}/status`
+
+Check inference status for a cluster.
+
+**Response** `200`
+```json
+{
+  "cluster_id": 142,
+  "has_inference": true,
+  "inference_status": "pending",
+  "confidence_score": 72.0
+}
+```
+
+### `GET /multibets/admin/pending`
+
+Paginated pending inferences for admin review.
+
+**Query params:**
+- `skip` (int, default `0`)
+- `limit` (int, default `20`, max `100`)
+
+**Response** `200`
+```json
+{
+  "data": [ /* serialized inferences with clusterName */ ],
+  "pagination": { "skip": 0, "limit": 20, "total": 3, "hasMore": false }
+}
+```
+
+### `GET /multibets/admin/all`
+
+All inferences with optional status filter.
+
+**Query params:**
+- `status` (string, optional) — `pending`, `approved`, `rejected`, `no_cross_events`
+- `skip` / `limit`
+
+**Response** `200` — same paginated shape as `/admin/pending`
+
+### `GET /multibets/admin/clusters`
+
+Clusters with multibet analysis status flags.
+
+**Query params:**
+- `skip` / `limit`
+- `search` (string, optional) — name/keyword match
+
+**Response** `200`
+```json
+{
+  "data": [
+    {
+      "id": 142,
+      "name": "Republican Primary Candidates",
+      "keywords": ["trump", "desantis"],
+      "totalVolume": 3200000.0,
+      "marketCount": 18,
+      "multibetStatus": "pending",
+      "multibetScore": 72.0
+    }
+  ],
+  "pagination": { "skip": 0, "limit": 50, "total": 123, "hasMore": true }
+}
+```
+
+### `GET /multibets/admin/{cluster_id}/details`
+
+Full inference details including `inputSnapshot` for admin review.
+
+**Response** `200` — serialized inference + `inputSnapshot` JSON
+
+**Response** `404`
+```json
+{ "detail": "No inference found for cluster 99" }
+```
+
+### `POST /multibets/admin/{cluster_id}/review`
+
+Approve or reject an inference.
+
+**Body:**
+```json
+{
+  "action": "approve",
+  "admin_notes": "Looks good",
+  "reviewed_by": "admin"
+}
+```
+
+**Response** `200` — updated serialized inference
+
+**Response** `404`
+```json
+{ "detail": "No inference found for cluster 99" }
 ```
 
 ### `GET /clusters/{cluster_id}/correlation/stream`
