@@ -1,193 +1,171 @@
 import axios from './axios'
 
-// Types
-export interface MultibetInference {
-    id: number
-    clusterId: number
-    clusterName: string | null
-    status: 'pending' | 'approved' | 'rejected' | 'no_cross_events'
-    confidenceScore: number
-    direction: 'positive' | 'negative'
-    marketAId: number
-    marketATitle: string
-    marketAEventTitle: string
-    marketBId: number
-    marketBTitle: string
-    marketBEventTitle: string
-    correlationR: number | null
-    newsOverlap: number | null
-    featureOverlap: number | null
-    keyFactors: string[]
-    reasoning: string
-    createdAt: string
-    reviewedAt: string | null
-    reviewedBy: string | null
-    adminNotes: string | null
-    inputSnapshot?: any
-}
+// ───────────────────────── Superclusters ─────────────────────────
 
-export interface ClusterAnalysisInfo {
+export interface SuperclusterSummary {
     id: number
     name: string | null
-    keywords: string[]
-    totalVolume: number | null
-    marketCount: number
-    hasCorrelation: boolean
-    correlationSource: string | null
-    hasNews: boolean
-    newsCount: number
-    multibetStatus: string | null
-    multibetScore: number | null
-    isAnalysisRunning: boolean
-    analysisProgress: string | null
+    market_count: number
+    has_graph: boolean
 }
 
-export interface FullAnalysisStatus {
-    status: 'not_running' | 'running' | 'completed' | 'failed'
-    progress?: string
-    error?: string
-    result?: any
+// ───────────────────────── Simulation runs ───────────────────────
+
+export type RunStatus = 'pending' | 'running' | 'completed' | 'failed'
+
+export interface RunSummary {
+    run_id: string
+    super_cluster_id: number
+    status: RunStatus
+    current_step: string
+    started_at: string
+    completed_at: string | null
+    agent_count: number
+    action_count: number
+    hedge_count: number
 }
 
-export interface PaginationResponse<T> {
-    data: T[]
-    pagination: {
-        skip: number
-        limit: number
-        total: number
-        hasMore: boolean
-    }
-}
-
-export interface Agent {
-    id: string
+export interface AgentSpec {
+    market_id: number
+    cluster_id: number
+    market_title: string
+    event_title: string | null
+    cluster_name: string | null
     name: string
-    role: string
-    status: 'idle' | 'thinking' | 'speaking' | 'offline'
-    colorHex?: string
+    bio: string
+    persona: string
+    interests: string[]
 }
 
-export interface AgentMessage {
-    id: string
-    agentId: string
-    agentName: string
-    agentRole: string
-    content: string
-    timestamp: string
-    type: 'message' | 'decision' | 'tool_call'
-    metadata?: Record<string, any>
+export type AgentActionType = 'post' | 'reply' | 'stance_change' | 'skip'
+export type AgentStance = 'bullish' | 'bearish' | 'neutral'
+
+export interface AgentAction {
+    id: number
+    round_number: number
+    sequence: number
+    agent_market_id: number
+    agent_name: string
+    action_type: AgentActionType
+    target_market_id: number | null
+    parent_action_id: number | null
+    title: string | null
+    content: string | null
+    stance: AgentStance | null
+    created_at: string
 }
 
-export const agentsApi = {
-    async list(): Promise<Agent[]> {
-        const response = await axios.get('/api/agents')
+export interface SynthesizedHedge {
+    rank: number
+    market_a_id: number
+    market_b_id: number
+    market_a_title: string
+    market_b_title: string
+    market_a_cluster_id: number | null
+    market_b_cluster_id: number | null
+    confidence_score: number
+    direction: string
+    reasoning: string
+    key_factors: string[]
+    co_movement_score: number
+    interaction_score: number
+    contradiction_score: number
+    hedge_score: number
+    recommended_combo: string | null
+}
+
+export interface RunDetail {
+    run: {
+        run_id: string
+        super_cluster_id: number
+        status: RunStatus
+        current_step: string
+        rounds_completed: number
+        started_at: string
+        completed_at: string | null
+        error: string | null
+        config: Record<string, any>
+        agent_count: number
+        action_count: number
+        hedge_count: number
+    }
+    agents: AgentSpec[]
+    hedges: SynthesizedHedge[]
+}
+
+export const simulationApi = {
+    async listSuperclusters(): Promise<SuperclusterSummary[]> {
+        const response = await axios.get('/oasis-simulation/superclusters')
+        return response.data.superclusters
+    },
+
+    async listRuns(): Promise<RunSummary[]> {
+        const response = await axios.get('/oasis-simulation/runs')
+        return response.data.runs
+    },
+
+    async getRun(runId: string): Promise<RunDetail> {
+        const response = await axios.get(`/oasis-simulation/runs/${runId}`)
         return response.data
     },
-    async messages(since?: string, limit: number = 100): Promise<AgentMessage[]> {
-        const params: any = { limit }
-        if (since) params.since = since
-        const response = await axios.get('/api/agents/messages', { params })
+
+    async triggerRun(
+        superClusterId: number,
+        overrides: Partial<{
+            agent_cap: number
+            rounds: number
+            synthesize_top_n: number
+            cheap_model: string
+            premium_model: string
+        }> = {}
+    ): Promise<{ status: string; run_id: string; super_cluster_id: number; supercluster_name: string }> {
+        const response = await axios.post(
+            `/oasis-simulation/superclusters/${superClusterId}/run`,
+            overrides
+        )
         return response.data
     },
 }
 
-// API Methods
+// ───────────────────────── Multibets (hedge view) ─────────────────
+
+/** A hedge joined with the run it came from — used for the cross-run multibets list. */
+export interface MultibetRow extends SynthesizedHedge {
+    run_id: string
+    super_cluster_id: number
+    run_completed_at: string | null
+}
+
 export const multibetsApi = {
-    admin: {
-        // Get all clusters with their analysis status
-        async getClusters(
-            skip: number = 0,
-            limit: number = 50,
-            search?: string
-        ): Promise<PaginationResponse<ClusterAnalysisInfo>> {
-            const params: any = { skip, limit }
-            if (search) params.search = search
-            const response = await axios.get('/api/multibets/admin/clusters', { params })
-            return response.data
-        },
-
-        // Get pending inferences
-        async getPending(
-            skip: number = 0,
-            limit: number = 20
-        ): Promise<PaginationResponse<MultibetInference>> {
-            const response = await axios.get('/api/multibets/admin/pending', {
-                params: { skip, limit }
+    /** Flatten synthesized hedges from every completed run. */
+    async listAll(): Promise<MultibetRow[]> {
+        const runs = await simulationApi.listRuns()
+        const completed = runs.filter((r) => r.status === 'completed' && r.hedge_count > 0)
+        const details = await Promise.all(completed.map((r) => simulationApi.getRun(r.run_id)))
+        const rows: MultibetRow[] = []
+        details.forEach((d) => {
+            d.hedges.forEach((h) => {
+                rows.push({
+                    ...h,
+                    run_id: d.run.run_id,
+                    super_cluster_id: d.run.super_cluster_id,
+                    run_completed_at: d.run.completed_at,
+                })
             })
-            return response.data
-        },
-
-        // Get all inferences with optional status filter
-        async getAll(
-            status: string | null,
-            skip: number = 0,
-            limit: number = 20
-        ): Promise<PaginationResponse<MultibetInference>> {
-            const params: any = { skip, limit }
-            if (status) params.status = status
-            const response = await axios.get('/api/multibets/admin/all', { params })
-            return response.data
-        },
-
-        // Get inference details
-        async getDetails(clusterId: number): Promise<MultibetInference> {
-            const response = await axios.get(`/api/multibets/admin/${clusterId}/details`)
-            return response.data
-        },
-
-        // Run full analysis for a cluster
-        async runFullAnalysis(clusterId: number, force: boolean = false): Promise<any> {
-            const response = await axios.post(
-                `/api/multibets/admin/clusters/${clusterId}/full-analysis`,
-                null,
-                { params: { force } }
-            )
-            return response.data
-        },
-
-        // Get analysis status
-        async getAnalysisStatus(clusterId: number): Promise<FullAnalysisStatus> {
-            const response = await axios.get(
-                `/api/multibets/admin/clusters/${clusterId}/analysis-status`
-            )
-            return response.data
-        },
-
-        // Review inference
-        async review(
-            clusterId: number,
-            action: 'approve' | 'reject',
-            adminNotes?: string,
-            reviewedBy?: string
-        ): Promise<MultibetInference> {
-            const response = await axios.post(`/api/multibets/admin/${clusterId}/review`, {
-                action,
-                admin_notes: adminNotes,
-                reviewed_by: reviewedBy
-            })
-            return response.data
-        }
-    }
-}
-
-export const marketsApi = {
-    // Get processing status
-    async getProcessingStatus(): Promise<{ enabled: boolean }> {
-        const response = await axios.get('/api/markets/processing/status')
-        return response.data
+        })
+        rows.sort((a, b) => b.confidence_score - a.confidence_score)
+        return rows
     },
 
-    // Toggle processing
-    async toggleProcessing(): Promise<{ enabled: boolean; message: string }> {
-        const response = await axios.post('/api/markets/processing/toggle')
-        return response.data
-    }
-}
-
-export const mapApi = {
-    // Trigger reclustering
-    async recluster(): Promise<{ message: string }> {
-        const response = await axios.post('/api/map/recluster')
-        return response.data
-    }
+    async getOne(runId: string, rank: number): Promise<MultibetRow | null> {
+        const detail = await simulationApi.getRun(runId)
+        const hedge = detail.hedges.find((h) => h.rank === rank)
+        if (!hedge) return null
+        return {
+            ...hedge,
+            run_id: detail.run.run_id,
+            super_cluster_id: detail.run.super_cluster_id,
+            run_completed_at: detail.run.completed_at,
+        }
+    },
 }
