@@ -1,5 +1,7 @@
 .env
 __pycache__/
+.mypy_cache/
+**/.mypy_cache/
 *.pyc
 .venv/
 node_modules/

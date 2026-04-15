@@ -6,6 +6,7 @@ from typing import Any, Dict, Optional
 from datetime import datetime, timezone
 from fastapi import FastAPI, BackgroundTasks, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.db.prisma_client import prisma, connect_db, disconnect_db
@@ -506,6 +507,63 @@ async def get_cluster(cluster_id: int):
     )
     result["category"] = cluster.category
     return result
+
+
+@app.get("/clusters/{cluster_id}/multibets")
+async def list_cluster_multibets(
+    cluster_id: int,
+    status: Optional[str] = Query(
+        None,
+        description="Optional hedge status filter: pending | approved | rejected",
+    ),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
+):
+    """List synthesized multibets that reference the given cluster."""
+    cluster = await prisma.cluster.find_unique(where={"id": cluster_id})
+    if not cluster:
+        raise HTTPException(status_code=404, detail=f"Cluster {cluster_id} not found")
+
+    if status and status not in ("pending", "approved", "rejected"):
+        raise HTTPException(
+            status_code=400,
+            detail="status must be one of: pending, approved, rejected",
+        )
+
+    rows = []
+    for run in sim_store.list():
+        for hedge in run.hedges:
+            if cluster_id not in (hedge.market_a_cluster_id, hedge.market_b_cluster_id):
+                continue
+            if status and hedge.status != status:
+                continue
+
+            item = sim_serializers.serialize_hedge(hedge, run.run_id)
+            item["run_status"] = run.status
+            item["run_started_at"] = run.started_at
+            item["run_completed_at"] = run.completed_at
+            rows.append(item)
+
+    rows.sort(
+        key=lambda h: (
+            h.get("confidence_score") if h.get("confidence_score") is not None else -1,
+            h.get("created_at") or "",
+        ),
+        reverse=True,
+    )
+
+    total = len(rows)
+    paged_rows = rows[skip: skip + limit]
+    return {
+        "cluster_id": cluster_id,
+        "data": paged_rows,
+        "pagination": {
+            "skip": skip,
+            "limit": limit,
+            "total": total,
+            "hasMore": skip + limit < total,
+        },
+    }
 
 
 @app.get("/clusters/{cluster_id}/correlation")
