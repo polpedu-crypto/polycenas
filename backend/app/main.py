@@ -10,7 +10,10 @@ from pydantic import BaseModel
 
 from app.db.prisma_client import prisma, connect_db, disconnect_db
 from app.services.clustering_service import GraphRebuildService
-from app.services.correlation_service import analyze_cluster_correlations
+from app.services.correlation_service import (
+    analyze_cluster_correlations,
+    stream_cluster_correlations,
+)
 from app.services.llm_service import LLMService
 from app.services.simulation import orchestrator as sim_orchestrator
 from app.services.simulation.store import store as sim_store
@@ -431,3 +434,32 @@ async def get_cluster_correlation(
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@app.get("/clusters/{cluster_id}/correlation/stream")
+async def stream_cluster_correlation(
+    cluster_id: int,
+    threshold: float = Query(0.7, ge=0.0, le=1.0),
+    days_lookback: int = Query(90, ge=7, le=365),
+    limit_to_top_n: int = Query(10, ge=2, le=50),
+):
+    """Stream correlation progress as Server-Sent Events.
+
+    Events emitted:
+      - `start`:     cluster metadata + market list
+      - `market`:    one per market as its history arrives (completed / total)
+      - `computing`: all fetches finished, starting correlation
+      - `result`:    final correlation payload (same shape as the non-stream route)
+      - `error`:     cluster not found or fatal failure
+    """
+    stream = stream_cluster_correlations(
+        cluster_id=cluster_id,
+        threshold=threshold,
+        days_lookback=days_lookback,
+        limit_to_top_n=limit_to_top_n,
+    )
+    return StreamingResponse(
+        stream,
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )

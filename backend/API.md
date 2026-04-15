@@ -209,9 +209,27 @@ Return a single cluster with its markets.
 { "detail": "Cluster 99 not found" }
 ```
 
+### `GET /clusters/{cluster_id}/correlation/stream`
+
+Same analysis as `/correlation` but streamed as Server-Sent Events so the client can render progress while Polymarket fetches are in flight. Use this when latency matters or the cluster is large.
+
+**Query params:** same as `/correlation` (`threshold`, `days_lookback`, `limit_to_top_n`).
+
+**Event types:**
+- `start` — `{ cluster_id, cluster_name, market_count, markets, threshold, days_lookback }`
+- `market` — one per market as its history arrives: `{ market_id, title, raw_points, hourly_points, usable, completed, total }`
+- `computing` — `{ usable_markets }` — fetches done, starting the matrix
+- `result` — final payload matching the `/correlation` response shape
+- `error` — `{ detail }` — cluster not found or fatal failure (sent instead of `result`)
+
+**Curl example:**
+```bash
+curl -N "http://localhost:8000/clusters/1697/correlation/stream?days_lookback=30&threshold=0.5"
+```
+
 ### `GET /clusters/{cluster_id}/correlation`
 
-Compute a live Pearson correlation matrix for markets in the cluster by pulling hourly price history from Polymarket CLOB on demand. No cache.
+Compute a live Pearson correlation matrix for markets in the cluster. For each market we resolve the CLOB yes-token via Polymarket Gamma, fetch hourly price history from `clob.polymarket.com/prices-history`, bucket to hourly slots, and correlate with numpy. No cache.
 
 **Path params:**
 - `cluster_id` (int)
