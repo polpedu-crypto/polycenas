@@ -208,3 +208,52 @@ Return a single cluster with its markets.
 ```json
 { "detail": "Cluster 99 not found" }
 ```
+
+### `GET /clusters/{cluster_id}/correlation`
+
+Compute a live Pearson correlation matrix for markets in the cluster by pulling hourly price history from Polymarket CLOB on demand. No cache.
+
+**Path params:**
+- `cluster_id` (int)
+
+**Query params:**
+- `threshold` (float, default `0.7`, range `0.0–1.0`) — minimum |r| for a pair to appear in `significant_pairs`
+- `days_lookback` (int, default `90`, range `7–365`) — price history window
+- `limit_to_top_n` (int, default `10`, range `2–50`) — cap the matrix to top N markets by volume
+
+**Response** `200`
+```json
+{
+  "matrix": [
+    { "market_a_id": 501, "market_b_id": 502, "r_value": 0.83, "r_squared": 0.69 }
+  ],
+  "markets": {
+    "501": { "title": "…", "polymarketId": "0x…", "eventTitle": "…" }
+  },
+  "significant_pairs": [
+    {
+      "market_a_id": 501,
+      "market_a_title": "…",
+      "market_a_event": "…",
+      "market_b_id": 502,
+      "market_b_title": "…",
+      "market_b_event": "…",
+      "r_value": 0.83,
+      "r_squared": 0.69,
+      "correlation_type": "positive"
+    }
+  ],
+  "data_points": 1872,
+  "date_range": { "start": "2026-01-15T00:00:00+00:00", "end": "2026-04-15T00:00:00+00:00" },
+  "threshold": 0.7,
+  "cluster_name": "Republican Primary Candidates",
+  "analyzed_at": "2026-04-15T12:00:00+00:00"
+}
+```
+
+Empty `matrix` + empty `significant_pairs` when fewer than 2 markets have usable price history.
+
+**Response** `404`
+```json
+{ "detail": "Cluster 99 not found" }
+```

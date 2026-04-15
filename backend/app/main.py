@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.db.prisma_client import prisma, connect_db, disconnect_db
 from app.services.clustering_service import GraphRebuildService
+from app.services.correlation_service import analyze_cluster_correlations
 
 
 _rebuild_status: dict = {"running": False, "last_result": None}
@@ -238,3 +239,25 @@ async def get_cluster(cluster_id: int):
     )
     result["category"] = cluster.category
     return result
+
+
+@app.get("/clusters/{cluster_id}/correlation")
+async def get_cluster_correlation(
+    cluster_id: int,
+    threshold: float = Query(0.7, ge=0.0, le=1.0, description="Minimum |r| for significant pairs"),
+    days_lookback: int = Query(90, ge=7, le=365, description="Days of price history to analyze"),
+    limit_to_top_n: int = Query(10, ge=2, le=50, description="Cap matrix to top N markets by volume"),
+):
+    """Compute a live Pearson correlation matrix for markets in a cluster.
+
+    Fetches hourly price history from Polymarket CLOB on demand (no cache).
+    """
+    try:
+        return await analyze_cluster_correlations(
+            cluster_id=cluster_id,
+            threshold=threshold,
+            days_lookback=days_lookback,
+            limit_to_top_n=limit_to_top_n,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
