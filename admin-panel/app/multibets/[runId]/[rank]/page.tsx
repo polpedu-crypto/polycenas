@@ -115,9 +115,7 @@ export default function MultibetDetailPage() {
                                     </div>
                                     <div className="text-xs text-gray-500">
                                         From run{' '}
-                                        <span className="font-mono text-gray-700">{row.run_id.slice(0, 8)}…</span>
-                                        {' · supercluster '}
-                                        {row.super_cluster_id}
+                                        <span className="font-mono text-gray-700">{row.simulation_run_id.slice(0, 8)}…</span>
                                     </div>
                                 </div>
                                 {row.recommended_combo && (

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import {
-    ArrowLeft,
     RefreshCw,
     ChevronRight,
     Loader2,
@@ -12,6 +11,7 @@ import {
     TrendingDown,
     Minus,
     Zap,
+    Flame,
 } from 'lucide-react'
 import { multibetsApi, type MultibetRow } from '@/lib/api'
 
@@ -67,22 +67,35 @@ export default function MultibetsPage() {
     }, [fetchRows])
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <header className="bg-white shadow">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-                    <div className="flex items-center gap-4">
+        <div className="min-h-screen bg-neutral-100">
+            <header className="sticky top-0 z-20 bg-white border-b border-gray-200">
+                <div className="max-w-7xl mx-auto px-4 h-12 flex items-center gap-4">
+                    <Link href="/dashboard" className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-full bg-orange-500 flex items-center justify-center">
+                            <Flame className="w-4 h-4 text-white" />
+                        </div>
+                        <span className="font-bold text-gray-900">polycenas</span>
+                    </Link>
+                    <nav className="flex items-center gap-1 text-sm">
                         <Link
                             href="/dashboard"
-                            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+                            className="px-3 py-1.5 rounded-full hover:bg-neutral-100 text-gray-700"
                         >
-                            <ArrowLeft className="w-5 h-5" />
-                            <span>Back to Dashboard</span>
+                            Home
                         </Link>
-                        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                            <Zap className="w-6 h-6 text-purple-600" />
+                        <Link
+                            href="/agents"
+                            className="px-3 py-1.5 rounded-full hover:bg-neutral-100 text-gray-700"
+                        >
+                            Runs
+                        </Link>
+                        <Link
+                            href="/multibets"
+                            className="px-3 py-1.5 rounded-full bg-neutral-100 text-gray-900 font-medium"
+                        >
                             Multibets
-                        </h1>
-                    </div>
+                        </Link>
+                    </nav>
                     <button
                         onClick={() => {
                             setLoading(true)
@@ -90,18 +103,22 @@ export default function MultibetsPage() {
                         }}
                         disabled={loading}
                         className={cn(
-                            'flex items-center gap-2 px-4 py-2 rounded-lg text-sm border border-gray-300 bg-white hover:bg-gray-50 transition-colors',
+                            'ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border border-gray-200 bg-white hover:bg-neutral-50 transition-colors',
                             loading && 'opacity-50 cursor-not-allowed'
                         )}
                     >
-                        <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
-                        <span>Refresh</span>
+                        <RefreshCw className={cn('w-3.5 h-3.5', loading && 'animate-spin')} />
+                        refresh
                     </button>
                 </div>
             </header>
 
-            <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                <p className="text-sm text-gray-600 mb-4">
+            <main className="max-w-7xl mx-auto px-4 py-4">
+                <div className="flex items-center gap-2 mb-3">
+                    <Zap className="w-5 h-5 text-purple-600" />
+                    <h1 className="text-lg font-bold text-gray-900">Multibets</h1>
+                </div>
+                <p className="text-xs text-gray-500 mb-4">
                     Cross-market hedges synthesized from completed agent-debate runs, ranked by confidence.
                 </p>
 
@@ -124,8 +141,8 @@ export default function MultibetsPage() {
                     <div className="space-y-3">
                         {rows.map((row) => (
                             <Link
-                                key={`${row.run_id}-${row.rank}`}
-                                href={`/multibets/${row.run_id}/${row.rank}`}
+                                key={`${row.simulation_run_id}-${row.rank}`}
+                                href={`/multibets/${row.simulation_run_id}/${row.rank}`}
                                 className="block bg-white border border-gray-200 rounded-lg p-4 hover:border-blue-300 hover:shadow-md transition-all group"
                             >
                                 <div className="flex items-center justify-between gap-4">
