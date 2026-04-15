@@ -1,7 +1,8 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'polycenas admin',
+  title: 'polycenas — admin',
+  description: 'OASIS multi-agent simulation admin panel',
 }
 
 export default function RootLayout({

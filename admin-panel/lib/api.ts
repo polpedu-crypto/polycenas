@@ -1,161 +1,185 @@
 import axios from './axios'
 
-// Types
-export interface MultibetInference {
-    id: number
-    clusterId: number
-    clusterName: string | null
-    status: 'pending' | 'approved' | 'rejected' | 'no_cross_events'
-    confidenceScore: number
-    direction: 'positive' | 'negative'
-    marketAId: number
-    marketATitle: string
-    marketAEventTitle: string
-    marketBId: number
-    marketBTitle: string
-    marketBEventTitle: string
-    correlationR: number | null
-    newsOverlap: number | null
-    featureOverlap: number | null
-    keyFactors: string[]
-    reasoning: string
-    createdAt: string
-    reviewedAt: string | null
-    reviewedBy: string | null
-    adminNotes: string | null
-    inputSnapshot?: any
-}
+// ───────────────────────── Superclusters ─────────────────────────
 
-export interface ClusterAnalysisInfo {
+export interface SuperclusterSummary {
     id: number
     name: string | null
-    keywords: string[]
-    totalVolume: number | null
-    marketCount: number
-    hasCorrelation: boolean
-    correlationSource: string | null
-    hasNews: boolean
-    newsCount: number
-    multibetStatus: string | null
-    multibetScore: number | null
-    isAnalysisRunning: boolean
-    analysisProgress: string | null
+    market_count: number
+    has_graph: boolean
+    graph_id: number | null
 }
 
-export interface FullAnalysisStatus {
-    status: 'not_running' | 'running' | 'completed' | 'failed'
-    progress?: string
-    error?: string
-    result?: any
+// ───────────────────────── Simulation runs ───────────────────────
+
+export type RunStatus = 'pending' | 'running' | 'completed' | 'failed'
+
+/** Matches `serialize_run` in backend/app/services/simulation/serializers.py. */
+export interface RunSummary {
+    id: string
+    super_cluster_id: number
+    status: RunStatus
+    agent_count: number
+    market_count: number
+    rounds: number
+    platform_type: string
+    cheap_model: string
+    premium_model: string
+    synthesis_model: string
+    canonical_graph_id: number | null
+    simulation_graph_id: number | null
+    started_at: string
+    completed_at: string | null
+    error_message: string | null
+    total_llm_calls: number | null
+    total_cost_usd: number | null
+    created_at: string
 }
 
-export interface PaginationResponse<T> {
-    data: T[]
-    pagination: {
-        skip: number
-        limit: number
-        total: number
-        hasMore: boolean
-    }
+export type AgentActionType = 'post' | 'reply' | 'stance_change' | 'skip'
+export type AgentStance = 'bullish' | 'bearish' | 'neutral'
+
+/** Matches `serialize_action`. */
+export interface AgentAction {
+    id: number
+    sequence: number
+    round: number
+    agent_market_id: number
+    agent_name: string
+    action_type: AgentActionType
+    parent_action_id: number | null
+    target_market_id: number | null
+    title: string | null
+    content: string | null
+    stance: AgentStance | null
+    created_at: string
 }
 
-// API Methods
-export const multibetsApi = {
-    admin: {
-        // Get all clusters with their analysis status
-        async getClusters(
-            skip: number = 0,
-            limit: number = 50,
-            search?: string
-        ): Promise<PaginationResponse<ClusterAnalysisInfo>> {
-            const params: any = { skip, limit }
-            if (search) params.search = search
-            const response = await axios.get('/api/multibets/admin/clusters', { params })
-            return response.data
-        },
+export type HedgeStatus = 'pending' | 'approved' | 'rejected'
 
-        // Get pending inferences
-        async getPending(
-            skip: number = 0,
-            limit: number = 20
-        ): Promise<PaginationResponse<MultibetInference>> {
-            const response = await axios.get('/api/multibets/admin/pending', {
-                params: { skip, limit }
-            })
-            return response.data
-        },
-
-        // Get all inferences with optional status filter
-        async getAll(
-            status: string | null,
-            skip: number = 0,
-            limit: number = 20
-        ): Promise<PaginationResponse<MultibetInference>> {
-            const params: any = { skip, limit }
-            if (status) params.status = status
-            const response = await axios.get('/api/multibets/admin/all', { params })
-            return response.data
-        },
-
-        // Get inference details
-        async getDetails(clusterId: number): Promise<MultibetInference> {
-            const response = await axios.get(`/api/multibets/admin/${clusterId}/details`)
-            return response.data
-        },
-
-        // Run full analysis for a cluster
-        async runFullAnalysis(clusterId: number, force: boolean = false): Promise<any> {
-            const response = await axios.post(
-                `/api/multibets/admin/clusters/${clusterId}/full-analysis`,
-                null,
-                { params: { force } }
-            )
-            return response.data
-        },
-
-        // Get analysis status
-        async getAnalysisStatus(clusterId: number): Promise<FullAnalysisStatus> {
-            const response = await axios.get(
-                `/api/multibets/admin/clusters/${clusterId}/analysis-status`
-            )
-            return response.data
-        },
-
-        // Review inference
-        async review(
-            clusterId: number,
-            action: 'approve' | 'reject',
-            adminNotes?: string,
-            reviewedBy?: string
-        ): Promise<MultibetInference> {
-            const response = await axios.post(`/api/multibets/admin/${clusterId}/review`, {
-                action,
-                admin_notes: adminNotes,
-                reviewed_by: reviewedBy
-            })
-            return response.data
-        }
-    }
+/** Matches `serialize_hedge`. */
+export interface SynthesizedHedge {
+    id: number
+    simulation_run_id: string
+    rank: number
+    market_a_id: number
+    market_b_id: number
+    market_a_title: string
+    market_b_title: string
+    market_a_event_title: string | null
+    market_b_event_title: string | null
+    market_a_cluster_id: number | null
+    market_b_cluster_id: number | null
+    confidence_score: number
+    direction: string
+    reasoning: string
+    key_factors: string[]
+    co_movement_score: number
+    interaction_score: number
+    contradiction_score: number
+    hedge_score: number
+    correlation_r: number | null
+    status: HedgeStatus
+    admin_notes: string | null
+    reviewed_at: string | null
+    reviewed_by: string | null
+    created_at: string
+    hedge_matrix: any | null
+    structured_payload: any | null
+    matrix_verified: boolean | null
+    recommended_combo: string | null
+    input_snapshot: any | null
 }
 
-export const marketsApi = {
-    // Get processing status
-    async getProcessingStatus(): Promise<{ enabled: boolean }> {
-        const response = await axios.get('/api/markets/processing/status')
+export interface RunDetail {
+    run: RunSummary
+    hedges: SynthesizedHedge[]
+}
+
+export const simulationApi = {
+    async listSuperclusters(): Promise<SuperclusterSummary[]> {
+        const response = await axios.get('/oasis-simulation/superclusters')
+        return response.data.superclusters
+    },
+
+    async listRunsForSupercluster(superClusterId: number, limit = 100): Promise<RunSummary[]> {
+        const response = await axios.get(
+            `/oasis-simulation/superclusters/${superClusterId}/runs`,
+            { params: { limit } }
+        )
+        return response.data.runs
+    },
+
+    /** Fan-out: list every supercluster then aggregate their runs. */
+    async listAllRuns(): Promise<RunSummary[]> {
+        const superclusters = await simulationApi.listSuperclusters()
+        const lists = await Promise.all(
+            superclusters
+                .filter((s) => s.has_graph)
+                .map((s) => simulationApi.listRunsForSupercluster(s.id).catch(() => [] as RunSummary[]))
+        )
+        const all = lists.flat()
+        all.sort((a, b) => (b.started_at || '').localeCompare(a.started_at || ''))
+        return all
+    },
+
+    async getRun(runId: string): Promise<RunDetail> {
+        const response = await axios.get(`/oasis-simulation/runs/${runId}`)
         return response.data
     },
 
-    // Toggle processing
-    async toggleProcessing(): Promise<{ enabled: boolean; message: string }> {
-        const response = await axios.post('/api/markets/processing/toggle')
+    async getActions(runId: string, afterSequence = 0, limit = 500): Promise<AgentAction[]> {
+        const response = await axios.get(`/oasis-simulation/runs/${runId}/actions`, {
+            params: { after_sequence: afterSequence, limit },
+        })
+        return response.data.actions
+    },
+
+    async triggerRun(
+        superClusterId: number,
+        overrides: Partial<{
+            agent_cap: number
+            rounds: number
+            synthesize_top_n: number
+            cheap_model: string
+            premium_model: string
+        }> = {}
+    ): Promise<{ status: string; super_cluster_id: number; supercluster_name: string }> {
+        const response = await axios.post(
+            `/oasis-simulation/superclusters/${superClusterId}/run`,
+            overrides
+        )
         return response.data
-    }
+    },
 }
 
-export const mapApi = {
-    // Trigger reclustering
-    async recluster(): Promise<{ message: string }> {
-        const response = await axios.post('/api/map/recluster')
-        return response.data
-    }
+// ───────────────────────── Multibets (hedge view) ─────────────────
+
+export type MultibetRow = SynthesizedHedge & { run_completed_at: string | null }
+
+export const multibetsApi = {
+    /** Flatten synthesized hedges from every completed run. */
+    async listAll(): Promise<MultibetRow[]> {
+        const runs = await simulationApi.listAllRuns()
+        const completed = runs.filter((r) => r.status === 'completed')
+        const details = await Promise.all(
+            completed.map((r) => simulationApi.getRun(r.id).catch(() => null))
+        )
+        const rows: MultibetRow[] = []
+        details.forEach((d) => {
+            if (!d) return
+            d.hedges.forEach((h) => {
+                rows.push({ ...h, run_completed_at: d.run.completed_at })
+            })
+        })
+        rows.sort((a, b) => b.confidence_score - a.confidence_score)
+        return rows
+    },
+
+    async getOne(runId: string, rank: number): Promise<MultibetRow | null> {
+        const detail = await simulationApi.getRun(runId)
+        const hedge = detail.hedges.find((h) => h.rank === rank)
+        if (!hedge) return null
+        return { ...hedge, run_completed_at: detail.run.completed_at }
+    },
 }

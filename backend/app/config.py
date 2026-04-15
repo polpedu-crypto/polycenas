@@ -39,6 +39,16 @@ class Settings(BaseSettings):
         validation_alias="NAMING_MODEL",
     )
 
+    # OpenRouter — used for the hedge synthesis pass (strongest model available).
+    openrouter_api_key: str = Field(
+        default="",
+        validation_alias="OPENROUTER_API_KEY",
+    )
+    synthesis_model: str = Field(
+        default="anthropic/claude-opus-4.5",
+        validation_alias="SYNTHESIS_MODEL",
+    )
+
     class Config:
         env_file = ".env"
         extra = "ignore"

@@ -18,6 +18,7 @@ from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
 from collections import defaultdict, Counter
 from datetime import datetime, timezone
+from prisma import Json as PrismaJson
 
 from bertopic import BERTopic
 from hdbscan import HDBSCAN
@@ -26,6 +27,8 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.preprocessing import normalize
 from sklearn.feature_extraction.text import CountVectorizer
+
+from prisma import Json as PrismaJson
 
 from app.db.prisma_client import prisma
 from app.config import settings
@@ -600,10 +603,11 @@ class GraphRebuildService:
         total_clusters_to_save = sum(1 for ms in cluster_markets_map.values() if len(ms) >= 2)
         log(f"Persisting {total_clusters_to_save} clusters to DB...")
 
+        # Phase A: Create all cluster rows
+        log(f"  Creating {total_clusters_to_save} cluster rows...")
         for tid, c_markets in cluster_markets_map.items():
             if len(c_markets) < 2:
                 continue
-
             name = cluster_names.get(tid, f"Cluster {tid}")
             keywords = self._extract_keywords(l1, tid, name)
             positions = [market_positions[m.id] for m in c_markets if m.id in market_positions]
@@ -624,18 +628,50 @@ class GraphRebuildService:
             })
             topic_to_db_id[tid] = cluster.id
             cluster_count += 1
+        log(f"  Created {cluster_count} cluster rows")
 
+        # Phase B: Batch create all ClusterMarket links
+        log(f"  Creating ClusterMarket links...")
+        cm_data = []
+        for tid, c_markets in cluster_markets_map.items():
+            if len(c_markets) < 2 or tid not in topic_to_db_id:
+                continue
+            db_cluster_id = topic_to_db_id[tid]
             for m in c_markets:
-                x, y = market_positions.get(m.id, (0.0, 0.0))
-                await prisma.market.update(
-                    where={"id": m.id},
-                    data={"embeddingX": float(x), "embeddingY": float(y), "graphEmbedding": json.dumps([])},
-                )
-                await prisma.clustermarket.create(data={"clusterId": cluster.id, "marketId": m.id})
+                cm_data.append({"clusterId": db_cluster_id, "marketId": m.id})
                 market_count += 1
 
-            if cluster_count % 20 == 0:
-                log(f"  Persisted {cluster_count}/{total_clusters_to_save} clusters ({market_count} markets)")
+        # Batch in chunks of 500
+        for i in range(0, len(cm_data), 500):
+            chunk = cm_data[i:i + 500]
+            await prisma.clustermarket.create_many(data=chunk, skip_duplicates=True)
+            log(f"    ClusterMarket: {min(i + 500, len(cm_data))}/{len(cm_data)}")
+        log(f"  Created {len(cm_data)} ClusterMarket links")
+
+        # Phase C: Batch update market positions via raw SQL
+        log(f"  Updating {market_count} market positions...")
+        batch_size = 200
+        position_updates = []
+        for tid, c_markets in cluster_markets_map.items():
+            if len(c_markets) < 2:
+                continue
+            for m in c_markets:
+                x, y = market_positions.get(m.id, (0.0, 0.0))
+                position_updates.append((m.id, float(x), float(y)))
+
+        for i in range(0, len(position_updates), batch_size):
+            chunk = position_updates[i:i + batch_size]
+            cases_x = " ".join(f"WHEN {mid} THEN {x}" for mid, x, y in chunk)
+            cases_y = " ".join(f"WHEN {mid} THEN {y}" for mid, x, y in chunk)
+            ids = ",".join(str(mid) for mid, x, y in chunk)
+            await prisma.execute_raw(
+                f'UPDATE "Market" SET "embeddingX" = CASE "id" {cases_x} END, '
+                f'"embeddingY" = CASE "id" {cases_y} END, '
+                f'"graphEmbedding" = \'[]\' '
+                f'WHERE "id" IN ({ids})'
+            )
+            if (i + batch_size) % 1000 == 0 or i + batch_size >= len(position_updates):
+                log(f"    Positions: {min(i + batch_size, len(position_updates))}/{len(position_updates)}")
 
         log(f"DB persist done: {cluster_count} clusters, {market_count} markets")
 
@@ -685,18 +721,22 @@ class GraphRebuildService:
                 await prisma.supercluster.upsert(
                     where={"id": sid},
                     data={
-                        "create": {"id": sid, "name": name[:100], "metadata": {"cluster_count": count}},
-                        "update": {"name": name[:100], "metadata": {"cluster_count": count}},
+                        "create": {"id": sid, "name": name[:100], "metadata": PrismaJson({"cluster_count": count})},
+                        "update": {"name": name[:100], "metadata": PrismaJson({"cluster_count": count})},
                     },
                 )
             if active_sids:
                 await prisma.supercluster.delete_many(where={"id": {"not_in": active_sids}})
 
-        # 6. Delete old clusters (cascades ClusterMarket via schema)
-        if old_ids:
-            log(f"Deleting {len(old_ids)} old clusters...")
-            await prisma.clustermarket.delete_many(where={"clusterId": {"in": old_ids}})
-            await prisma.cluster.delete_many(where={"id": {"in": old_ids}})
+        # 6. Delete all clusters that aren't part of this rebuild
+        new_ids = list(topic_to_db_id.values())
+        stale = await prisma.cluster.find_many(where={"id": {"not_in": new_ids}})
+        stale_ids = [c.id for c in stale]
+        if stale_ids:
+            log(f"Deleting {len(stale_ids)} stale clusters (keeping {len(new_ids)} new)...")
+            await prisma.clustermarket.delete_many(where={"clusterId": {"in": stale_ids}})
+            await prisma.cluster.delete_many(where={"id": {"in": stale_ids}})
+            log(f"Deleted {len(stale_ids)} stale clusters")
 
         result = {
             "status": "completed",
