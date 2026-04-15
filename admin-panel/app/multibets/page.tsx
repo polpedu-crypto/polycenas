@@ -82,6 +82,9 @@ export default function MultibetsPage() {
     const [reviewingId, setReviewingId] = useState<number | null>(null)
     const [adminNotes, setAdminNotes] = useState('')
 
+    const [clustersError, setClustersError] = useState<string | null>(null)
+    const [inferencesError, setInferencesError] = useState<string | null>(null)
+
     // Fetch clusters
     const fetchClusters = useCallback(async () => {
         setClustersLoading(true)
@@ -93,8 +96,10 @@ export default function MultibetsPage() {
             )
             setClusters(result.data)
             setClustersPagination(result.pagination)
-        } catch (error) {
+            setClustersError(null)
+        } catch (error: any) {
             console.error('Failed to fetch clusters:', error)
+            setClustersError(error?.response?.data?.detail || error?.message || 'Failed to fetch clusters')
         } finally {
             setClustersLoading(false)
         }
@@ -113,8 +118,10 @@ export default function MultibetsPage() {
 
             setInferences(result.data)
             setPagination(result.pagination)
-        } catch (error) {
+            setInferencesError(null)
+        } catch (error: any) {
             console.error('Failed to fetch inferences:', error)
+            setInferencesError(error?.response?.data?.detail || error?.message || 'Failed to fetch inferences')
         } finally {
             setLoading(false)
         }
@@ -370,7 +377,10 @@ export default function MultibetsPage() {
                                     <ArrowLeft className="w-5 h-5" />
                                     <span>Back to Dashboard</span>
                                 </Link>
-                                <h1 className="text-2xl font-bold text-gray-900">Multibets</h1>
+                                <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                                    <Zap className="w-6 h-6 text-purple-600" />
+                                    Multibets
+                                </h1>
                             </div>
                         </div>
                     </div>
@@ -531,8 +541,15 @@ export default function MultibetsPage() {
                                 Showing {clusters.length} of {clustersPagination.total} clusters (sorted by volume)
                             </div>
 
+                            {clustersError && (
+                                <div className="mb-4 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                                    <span>{clustersError}</span>
+                                </div>
+                            )}
+
                             {/* Clusters List */}
-                            {clustersLoading ? (
+                            {clustersLoading && clusters.length === 0 ? (
                                 <div className="flex items-center justify-center py-20">
                                     <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
                                 </div>
@@ -875,8 +892,15 @@ export default function MultibetsPage() {
                                 Showing {inferences.length} of {pagination.total} inferences
                             </div>
 
+                            {inferencesError && (
+                                <div className="mb-4 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
+                                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                                    <span>{inferencesError}</span>
+                                </div>
+                            )}
+
                             {/* Inference List */}
-                            {loading ? (
+                            {loading && inferences.length === 0 ? (
                                 <div className="flex items-center justify-center py-20">
                                     <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
                                 </div>

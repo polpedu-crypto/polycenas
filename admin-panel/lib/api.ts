@@ -59,6 +59,38 @@ export interface PaginationResponse<T> {
     }
 }
 
+export interface Agent {
+    id: string
+    name: string
+    role: string
+    status: 'idle' | 'thinking' | 'speaking' | 'offline'
+    colorHex?: string
+}
+
+export interface AgentMessage {
+    id: string
+    agentId: string
+    agentName: string
+    agentRole: string
+    content: string
+    timestamp: string
+    type: 'message' | 'decision' | 'tool_call'
+    metadata?: Record<string, any>
+}
+
+export const agentsApi = {
+    async list(): Promise<Agent[]> {
+        const response = await axios.get('/api/agents')
+        return response.data
+    },
+    async messages(since?: string, limit: number = 100): Promise<AgentMessage[]> {
+        const params: any = { limit }
+        if (since) params.since = since
+        const response = await axios.get('/api/agents/messages', { params })
+        return response.data
+    },
+}
+
 // API Methods
 export const multibetsApi = {
     admin: {
