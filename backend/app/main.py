@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.db.prisma_client import connect_db, disconnect_db
+from app.db.prisma_client import prisma, connect_db, disconnect_db
 from app.services.clustering_service import GraphRebuildService
 
 
@@ -31,10 +31,18 @@ app.add_middleware(
 )
 
 
+# ---------------------------------------------------------------------------
+# Health
+# ---------------------------------------------------------------------------
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
 
+
+# ---------------------------------------------------------------------------
+# Graph Rebuild
+# ---------------------------------------------------------------------------
 
 async def _run_rebuild():
     _rebuild_status["running"] = True
@@ -66,4 +74,106 @@ async def rebuild_graph_status():
     return {
         "running": _rebuild_status["running"],
         "last_result": _rebuild_status["last_result"],
+    }
+
+
+# ---------------------------------------------------------------------------
+# Super-clusters & Clusters
+# ---------------------------------------------------------------------------
+
+def _format_cluster(cluster, include_markets: bool = False) -> dict:
+    markets = [cm.market for cm in cluster.clusterMarkets] if cluster.clusterMarkets else []
+    result = {
+        "id": cluster.id,
+        "name": cluster.name,
+        "keywords": list(cluster.keywords) if cluster.keywords else [],
+        "total_volume": cluster.totalVolume,
+        "market_count": len(markets),
+        "top_market": None,
+    }
+    if cluster.topMarketId and cluster.topMarketTitle:
+        top_vol = None
+        for m in markets:
+            if m.id == cluster.topMarketId:
+                top_vol = m.volume
+                break
+        result["top_market"] = {
+            "id": cluster.topMarketId,
+            "title": cluster.topMarketTitle,
+            "volume": top_vol or cluster.totalVolume,
+        }
+    if include_markets:
+        result["markets"] = [
+            {
+                "id": m.id,
+                "title": m.title,
+                "event_title": m.eventTitle,
+                "volume": m.volume,
+                "category": m.category,
+            }
+            for m in markets
+        ]
+    return result
+
+
+@app.get("/superclusters")
+async def list_superclusters():
+    """Returns all super-clusters with nested clusters and summary stats."""
+    superclusters = await prisma.supercluster.find_many(order={"id": "asc"})
+    clusters = await prisma.cluster.find_many(
+        where={"superClusterId": {"not": None}},
+        include={"clusterMarkets": {"include": {"market": True}}},
+        order={"totalVolume": "desc"},
+    )
+
+    sc_map: dict[int, list] = {sc.id: [] for sc in superclusters}
+    for c in clusters:
+        if c.superClusterId is not None and c.superClusterId in sc_map:
+            sc_map[c.superClusterId].append(c)
+
+    result = []
+    for sc in superclusters:
+        sc_clusters = sc_map.get(sc.id, [])
+        formatted = [_format_cluster(c) for c in sc_clusters]
+        total_vol = sum(c.totalVolume or 0 for c in sc_clusters)
+        total_markets = sum(f["market_count"] for f in formatted)
+        result.append({
+            "id": sc.id,
+            "name": sc.name,
+            "metadata": sc.metadata,
+            "total_volume": total_vol,
+            "cluster_count": len(formatted),
+            "market_count": total_markets,
+            "clusters": formatted,
+        })
+
+    result.sort(key=lambda x: x["total_volume"], reverse=True)
+    return result
+
+
+@app.get("/superclusters/{supercluster_id}")
+async def get_supercluster(supercluster_id: int):
+    """Returns a single super-cluster with full cluster + market details."""
+    sc = await prisma.supercluster.find_unique(where={"id": supercluster_id})
+    if not sc:
+        raise HTTPException(status_code=404, detail=f"Super-cluster {supercluster_id} not found")
+
+    clusters = await prisma.cluster.find_many(
+        where={"superClusterId": supercluster_id},
+        include={"clusterMarkets": {"include": {"market": True}}},
+        order={"totalVolume": "desc"},
+    )
+
+    formatted = [_format_cluster(c, include_markets=True) for c in clusters]
+    total_vol = sum(c.totalVolume or 0 for c in clusters)
+    total_markets = sum(f["market_count"] for f in formatted)
+
+    return {
+        "id": sc.id,
+        "name": sc.name,
+        "metadata": sc.metadata,
+        "total_volume": total_vol,
+        "cluster_count": len(formatted),
+        "market_count": total_markets,
+        "clusters": formatted,
     }

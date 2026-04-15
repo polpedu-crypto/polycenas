@@ -1,8 +1,10 @@
 """
 Gemini 2.5 Flash LLM client for cluster/super-cluster naming.
+Supports batched concurrent calls for speed.
 """
 
-from typing import List, Optional
+import asyncio
+from typing import List, Dict, Optional, Tuple
 from google import genai
 
 from app.config import settings
@@ -38,7 +40,7 @@ class LLMService:
             )
             return response.text.strip() if response.text else None
         except Exception as e:
-            print(f"Gemini API error: {e}")
+            print(f"Gemini API error: {e}", flush=True)
             return None
 
     async def name_cluster(self, market_titles: List[str]) -> Optional[str]:
@@ -60,6 +62,45 @@ class LLMService:
             return result.split("\n")[0].strip().strip("\"'")[:100]
         return None
 
+    async def name_clusters_batch(
+        self,
+        tasks: List[Tuple[int, List[str]]],
+        concurrency: int = 10,
+    ) -> Dict[int, str]:
+        """Name multiple clusters concurrently.
+
+        Args:
+            tasks: list of (topic_id, market_titles)
+            concurrency: max parallel Gemini calls
+
+        Returns:
+            dict of topic_id -> name (only successful ones)
+        """
+        if not self.available:
+            return {}
+
+        sem = asyncio.Semaphore(concurrency)
+        results: Dict[int, str] = {}
+
+        async def _name_one(topic_id: int, titles: List[str]):
+            async with sem:
+                try:
+                    name = await self.name_cluster(titles)
+                    if name:
+                        results[topic_id] = name
+                except Exception as e:
+                    print(f"  Batch naming failed for {topic_id}: {e}", flush=True)
+
+        # Process in chunks to avoid overwhelming the API
+        chunk_size = 5
+        for start in range(0, len(tasks), chunk_size):
+            chunk = tasks[start:start + chunk_size]
+            await asyncio.gather(*[_name_one(tid, titles) for tid, titles in chunk])
+            print(f"  Named {min(start + chunk_size, len(tasks))}/{len(tasks)} ({len(results)} OK)", flush=True)
+            if start + chunk_size < len(tasks):
+                await asyncio.sleep(0.5)
+        return results
+
     async def name_super_cluster(self, cluster_summaries: List[str]) -> Optional[str]:
         if not self.available:
             return None
@@ -79,3 +120,33 @@ class LLMService:
         if result:
             return result.split("\n")[0].strip().strip("\"'")[:100]
         return None
+
+    async def name_super_clusters_batch(
+        self,
+        tasks: List[Tuple[int, List[str]]],
+        concurrency: int = 5,
+    ) -> Dict[int, str]:
+        """Name multiple super-clusters concurrently."""
+        if not self.available:
+            return {}
+
+        sem = asyncio.Semaphore(concurrency)
+        results: Dict[int, str] = {}
+
+        async def _name_one(sid: int, summaries: List[str]):
+            async with sem:
+                try:
+                    name = await self.name_super_cluster(summaries)
+                    if name:
+                        results[sid] = name
+                except Exception as e:
+                    print(f"  SC batch naming failed for {sid}: {e}", flush=True)
+
+        chunk_size = 5
+        for start in range(0, len(tasks), chunk_size):
+            chunk = tasks[start:start + chunk_size]
+            await asyncio.gather(*[_name_one(sid, sums) for sid, sums in chunk])
+            print(f"  SC named {min(start + chunk_size, len(tasks))}/{len(tasks)} ({len(results)} OK)", flush=True)
+            if start + chunk_size < len(tasks):
+                await asyncio.sleep(0.5)
+        return results

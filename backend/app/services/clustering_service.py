@@ -31,6 +31,14 @@ from app.db.prisma_client import prisma
 from app.config import settings
 from app.services.llm_service import LLMService
 
+import sys
+
+
+def log(msg: str = ""):
+    """Print with immediate flush so background tasks show output in real time."""
+    print(msg, flush=True)
+    sys.stdout.flush()
+
 
 # ---------------------------------------------------------------------------
 # Data classes
@@ -75,7 +83,7 @@ class MarketClusteringService:
 
     def _ensure_model(self):
         if self.embedding_model is None:
-            print(f"Loading embedding model: {self.embedding_model_name}")
+            log(f"Loading embedding model: {self.embedding_model_name}")
             self.embedding_model = SentenceTransformer(self.embedding_model_name)
 
     @staticmethod
@@ -91,7 +99,7 @@ class MarketClusteringService:
             EventGroup(event_title=title, market_ids=[m.id for m in ms], markets=ms)
             for title, ms in groups_map.items()
         ]
-        print(f"Grouped {sum(len(g.markets) for g in groups)} markets into {len(groups)} event groups")
+        log(f"Grouped {sum(len(g.markets) for g in groups)} markets into {len(groups)} event groups")
         return groups
 
     # ------------------------------------------------------------------
@@ -104,12 +112,12 @@ class MarketClusteringService:
 
         event_groups = self._group_markets_by_event(markets)
         if len(event_groups) < self.min_cluster_size:
-            print(f"Too few event groups ({len(event_groups)}) — single-cluster fallback")
+            log(f"Too few event groups ({len(event_groups)}) — single-cluster fallback")
             return self._fallback_single_cluster(markets)
 
         documents = [eg.get_combined_text() for eg in event_groups]
         embeddings = self.embedding_model.encode(documents, show_progress_bar=True, convert_to_numpy=True)
-        print(f"Embeddings: {embeddings.shape}")
+        log(f"Embeddings: {embeddings.shape}")
 
         # BERTopic: UMAP → HDBSCAN
         self.topic_model = BERTopic(
@@ -128,19 +136,22 @@ class MarketClusteringService:
             verbose=True,
         )
         topics, _probs = self.topic_model.fit_transform(documents, embeddings)
+        n_topics = len({t for t in topics if t != -1})
+        n_outliers = sum(1 for t in topics if t == -1)
+        log(f"[STEP 1/5] BERTopic done: {n_topics} topics, {n_outliers} outliers")
 
         # Split oversized clusters
         topics, n_splits = self._split_oversized_clusters(topics, event_groups, embeddings)
-        if n_splits:
-            print(f"Split {n_splits} oversized clusters")
+        log(f"[STEP 2/5] Split done: {n_splits} oversized clusters split")
 
         # Reassign ALL outliers so every market has a cluster
         topics, n_reassigned = self._reassign_outliers(topics, embeddings)
-        if n_reassigned:
-            print(f"Reassigned {n_reassigned} outlier groups to nearest cluster")
+        log(f"[STEP 3/5] Outlier reassignment done: {n_reassigned} reassigned")
 
         # Names
+        log(f"[STEP 4/5] Starting cluster naming...")
         cluster_names = await self._generate_cluster_names(topics, event_groups)
+        log(f"[STEP 4/5] Cluster naming done")
 
         # Map back to individual markets
         market_to_cluster: Dict[int, int] = {}
@@ -152,10 +163,11 @@ class MarketClusteringService:
         market_to_cluster, cluster_names = _merge_similar_clusters(market_to_cluster, cluster_names)
 
         # 2D positions
+        log(f"[STEP 5/5] Generating 2D positions...")
         market_positions = self._generate_positions(event_groups, topics, embeddings)
 
         n_clusters = len({t for t in topics if t != -1})
-        print(f"Layer 1 done: {n_clusters} clusters, {len(market_to_cluster)} markets, 0 orphans")
+        log(f"Layer 1 done: {n_clusters} clusters, {len(market_to_cluster)} markets, 0 orphans")
         return market_to_cluster, cluster_names, market_positions
 
     # ------------------------------------------------------------------
@@ -166,38 +178,63 @@ class MarketClusteringService:
         self, topics: List[int], event_groups: List[EventGroup]
     ) -> Dict[int, str]:
         names: Dict[int, str] = {}
-        unique_topics = {t for t in topics if t != -1}
+        unique_topics = sorted({t for t in topics if t != -1})
+        total = len(unique_topics)
 
+        log(f"\nNaming {total} clusters...")
         llm = LLMService()
-        for topic_id in unique_topics:
-            cluster_egs = [eg for eg, t in zip(event_groups, topics) if t == topic_id]
+        log(f"  LLM available: {llm.available} (model: {settings.naming_model})")
+
+        # Build all naming tasks
+        tasks: list = []
+        topic_egs: dict = {}
+        for tid in unique_topics:
+            cluster_egs = [eg for eg, t in zip(event_groups, topics) if t == tid]
             titles = [eg.event_title for eg in cluster_egs[:10]]
+            tasks.append((tid, titles))
+            topic_egs[tid] = cluster_egs
 
-            # LLM naming
-            try:
-                name = await llm.name_cluster(titles)
-                if name:
-                    names[topic_id] = name
-                    continue
-            except Exception:
-                pass
+        # Batch LLM naming (10 concurrent calls)
+        if llm.available:
+            log(f"  Batching {len(tasks)} LLM calls (concurrency=10)...")
+            llm_names = await llm.name_clusters_batch(tasks, concurrency=10)
+            names.update(llm_names)
+            log(f"  LLM named {len(llm_names)}/{total} clusters")
 
-            # c-TF-IDF fallback
+        # Fallback for anything LLM missed: retry once, then c-TF-IDF, then title
+        remaining = [tid for tid in unique_topics if tid not in names]
+        if remaining and llm.available:
+            log(f"  Retrying {len(remaining)} failed clusters...")
+            retry_tasks = [(tid, [eg.event_title for eg in topic_egs[tid][:10]]) for tid in remaining]
+            retry_names = await llm.name_clusters_batch(retry_tasks, concurrency=5)
+            names.update(retry_names)
+            log(f"  Retry named {len(retry_names)}/{len(remaining)}")
+
+        # c-TF-IDF + title fallback for any still unnamed
+        remaining = [tid for tid in unique_topics if tid not in names]
+        tfidf_ok = 0
+        fallback_ok = 0
+        for tid in remaining:
+            # c-TF-IDF
             try:
-                topic_words = self.topic_model.get_topic(topic_id)
+                topic_words = self.topic_model.get_topic(tid)
                 if topic_words:
-                    names[topic_id] = " ".join(w for w, _ in topic_words[:4]).title()
+                    names[tid] = " ".join(w for w, _ in topic_words[:4]).title()
+                    tfidf_ok += 1
                     continue
             except Exception:
                 pass
-
-            # Title fallback
-            if cluster_egs:
-                best = max(cluster_egs, key=lambda eg: len(eg.markets))
-                names[topic_id] = best.event_title[:80]
+            # Title
+            egs = topic_egs.get(tid, [])
+            if egs:
+                best = max(egs, key=lambda eg: len(eg.markets))
+                names[tid] = best.event_title[:80]
             else:
-                names[topic_id] = f"Cluster {topic_id}"
+                names[tid] = f"Cluster {tid}"
+            fallback_ok += 1
 
+        llm_total = total - tfidf_ok - fallback_ok
+        log(f"Naming done: {llm_total} LLM, {tfidf_ok} c-TF-IDF, {fallback_ok} title fallback")
         return names
 
     # ------------------------------------------------------------------
@@ -344,7 +381,7 @@ class SuperClusterService:
             ))
 
         embeddings = self.embedding_model.encode(documents, show_progress_bar=True, convert_to_numpy=True)
-        print(f"Cluster embeddings: {embeddings.shape}")
+        log(f"Cluster embeddings: {embeddings.shape}")
 
         # HDBSCAN for super-clusters
         super_clusters = self._detect_super_clusters(embeddings, cid_to_idx)
@@ -359,7 +396,7 @@ class SuperClusterService:
         positions = self._generate_positions(embeddings, cid_to_idx)
 
         n_sc = len(set(super_clusters.values()))
-        print(f"Layer 2 done: {n_sc} super-clusters, 0 orphan clusters")
+        log(f"Layer 2 done: {n_sc} super-clusters, 0 orphan clusters")
 
         return {
             "super_clusters": super_clusters,
@@ -399,7 +436,7 @@ class SuperClusterService:
 
         n_sc = len({l for l in labels if l != -1})
         n_out = sum(1 for l in labels if l == -1)
-        print(f"Super-clusters: {n_sc} detected, {n_out} outliers (will be reassigned)")
+        log(f"Super-clusters: {n_sc} detected, {n_out} outliers (will be reassigned)")
         return result
 
     @staticmethod
@@ -436,7 +473,7 @@ class SuperClusterService:
         for i, cid in enumerate(outlier_cids):
             result[cid] = valid_sids[int(sims[i].argmax())]
 
-        print(f"Reassigned {len(outlier_cids)} outlier clusters to nearest super-cluster")
+        log(f"Reassigned {len(outlier_cids)} outlier clusters to nearest super-cluster")
         return result
 
     async def _name_super_clusters(
@@ -448,9 +485,13 @@ class SuperClusterService:
             if sid != -1:
                 groups[sid].append(c)
 
-        names: Dict[int, str] = {}
+        total = len(groups)
+        log(f"\nNaming {total} super-clusters...")
+
+        # Build summaries for each super-cluster
+        sc_summaries: Dict[int, list] = {}
         for sid, clusters in sorted(groups.items()):
-            cluster_summaries = []
+            summaries = []
             for c in clusters[:12]:
                 name = c.get("name", f"Cluster {c['id']}")
                 sample_titles = [
@@ -461,17 +502,27 @@ class SuperClusterService:
                 summary = f"Cluster: {name}"
                 if sample_titles:
                     summary += f"\n  Markets: {' | '.join(sample_titles)}"
-                cluster_summaries.append(summary)
+                summaries.append(summary)
+            sc_summaries[sid] = summaries
 
-            try:
-                name = await self.llm.name_super_cluster(cluster_summaries)
-                if name:
-                    names[sid] = name[:100]
-                    continue
-            except Exception:
-                pass
+        # Batch LLM naming
+        names: Dict[int, str] = {}
+        tasks = [(sid, sums) for sid, sums in sc_summaries.items()]
+        if self.llm.available:
+            log(f"  Batching {len(tasks)} SC LLM calls (concurrency=5)...")
+            llm_names = await self.llm.name_super_clusters_batch(tasks, concurrency=5)
+            names.update(llm_names)
+            log(f"  LLM named {len(llm_names)}/{total} super-clusters")
+            for sid, name in sorted(llm_names.items()):
+                n_clusters = len(groups.get(sid, []))
+                log(f"    SC {sid} ({n_clusters} clusters): \"{name}\"")
 
-            # Fallback: most common keywords
+        # Fallback for unnamed
+        fallback_ok = 0
+        for sid in sorted(groups.keys()):
+            if sid in names:
+                continue
+            clusters = groups[sid]
             all_kw = []
             for c in clusters:
                 all_kw.extend(c.get("keywords", [])[:3])
@@ -481,7 +532,10 @@ class SuperClusterService:
             else:
                 cname = clusters[0].get("name", "") if clusters else ""
                 names[sid] = cname[:50] or f"Super-cluster {sid}"
+            fallback_ok += 1
+            log(f"    SC {sid} fallback: \"{names[sid]}\"")
 
+        log(f"SC naming done: {total - fallback_ok} LLM, {fallback_ok} fallback")
         return names
 
     def _generate_positions(
@@ -508,9 +562,9 @@ class GraphRebuildService:
     """Orchestrates full graph rebuild: fetch markets → cluster → super-cluster → persist."""
 
     async def rebuild(self) -> Dict:
-        print("=" * 60)
-        print("Starting full graph rebuild")
-        print("=" * 60)
+        log("=" * 60)
+        log("Starting full graph rebuild")
+        log("=" * 60)
 
         # 1. Fetch open markets
         now = datetime.now(timezone.utc)
@@ -520,7 +574,7 @@ class GraphRebuildService:
         )
         all_markets.sort(key=lambda m: m.volume or 0, reverse=True)
         markets = all_markets[:max_m] if len(all_markets) > max_m else all_markets
-        print(f"Fetched {len(markets)} markets")
+        log(f"Fetched {len(markets)} markets")
 
         if len(markets) < 2:
             return {"status": "error", "message": "Not enough markets"}
@@ -543,6 +597,8 @@ class GraphRebuildService:
         topic_to_db_id: Dict[int, int] = {}
         cluster_count = 0
         market_count = 0
+        total_clusters_to_save = sum(1 for ms in cluster_markets_map.values() if len(ms) >= 2)
+        log(f"Persisting {total_clusters_to_save} clusters to DB...")
 
         for tid, c_markets in cluster_markets_map.items():
             if len(c_markets) < 2:
@@ -578,7 +634,13 @@ class GraphRebuildService:
                 await prisma.clustermarket.create(data={"clusterId": cluster.id, "marketId": m.id})
                 market_count += 1
 
+            if cluster_count % 20 == 0:
+                log(f"  Persisted {cluster_count}/{total_clusters_to_save} clusters ({market_count} markets)")
+
+        log(f"DB persist done: {cluster_count} clusters, {market_count} markets")
+
         # 5. Layer 2 — super-clusters (no edges needed for MVP)
+        log("\nStarting Layer 2 — super-cluster detection...")
         db_clusters = await prisma.cluster.find_many(
             where={"id": {"in": list(topic_to_db_id.values())}},
             include={"clusterMarkets": {"include": {"market": True}}},
@@ -632,7 +694,7 @@ class GraphRebuildService:
 
         # 6. Delete old clusters (cascades ClusterMarket via schema)
         if old_ids:
-            print(f"Deleting {len(old_ids)} old clusters...")
+            log(f"Deleting {len(old_ids)} old clusters...")
             await prisma.clustermarket.delete_many(where={"clusterId": {"in": old_ids}})
             await prisma.cluster.delete_many(where={"id": {"in": old_ids}})
 
@@ -641,7 +703,7 @@ class GraphRebuildService:
             "markets_clustered": market_count,
             "clusters_created": cluster_count,
         }
-        print(f"Graph rebuild complete: {result}")
+        log(f"Graph rebuild complete: {result}")
         return result
 
     @staticmethod
@@ -708,5 +770,5 @@ def _merge_similar_clusters(
 
     new_m2c = {mid: resolve(tid) for mid, tid in market_to_cluster.items()}
     new_names = {tid: n for tid, n in cluster_names.items() if tid not in merge_map}
-    print(f"Merged {len(merge_map)} similar clusters ({len(cluster_names)} → {len(new_names)})")
+    log(f"Merged {len(merge_map)} similar clusters ({len(cluster_names)} → {len(new_names)})")
     return new_m2c, new_names
