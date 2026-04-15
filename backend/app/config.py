@@ -7,9 +7,9 @@ class Settings(BaseSettings):
         default="postgresql://localhost:5432/polymarket",
         validation_alias="DATABASE_URL",
     )
-    openrouter_api_key: str = Field(
+    vertex_api_key: str = Field(
         default="",
-        validation_alias="OPENROUTER_API_KEY",
+        validation_alias="VERTEX_API_KEY",
     )
 
     # BERTopic clustering
@@ -34,9 +34,9 @@ class Settings(BaseSettings):
     )
 
     # LLM naming
-    cheap_model: str = Field(
-        default="anthropic/claude-haiku-4-5",
-        validation_alias="CHEAP_MODEL",
+    naming_model: str = Field(
+        default="gemini-2.5-flash",
+        validation_alias="NAMING_MODEL",
     )
 
     class Config:

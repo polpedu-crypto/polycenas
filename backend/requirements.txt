@@ -12,3 +12,4 @@ umap-learn>=0.5.5
 bertopic>=0.15.0
 hdbscan>=0.8.33
 sentence-transformers>=2.2.0
+google-genai>=1.0.0

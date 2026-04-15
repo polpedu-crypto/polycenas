@@ -18,12 +18,12 @@ polycenas/
 
 ## Stack
 
-| Layer     | Tech                                       |
-| --------- | ------------------------------------------ |
-| Backend   | Python, FastAPI, Uvicorn                   |
-| Database  | PostgreSQL |
-| ORM       | Prisma Client Python (`prisma-client-py`)  |
-| LLM       | TBD (cheap model for agents, premium for synthesis) |
+| Layer    | Tech                                                |
+| -------- | --------------------------------------------------- |
+| Backend  | Python, FastAPI, Uvicorn                            |
+| Database | PostgreSQL                                          |
+| ORM      | Prisma Client Python (`prisma-client-py`)           |
+| LLM      | Gemini 2.5 Flash (naming), TBD (agents, synthesis)  |
 
 ## Database & Prisma
 
@@ -31,16 +31,16 @@ We connect to the project PostgreSQL database for MVP.
 
 The Prisma schema here only defines the models we actually query. Current candidates:
 
-| Model              | Why we need it |
-| ------------------ | -------------- |
-| `Market`           | Agent identity — each agent represents one market |
-| `SuperCluster`     | Scopes a simulation run to a group of related markets |
-| `Cluster`          | Market groupings within a supercluster |
+| Model              | Why we need it                                               |
+| ------------------ | ------------------------------------------------------------ |
+| `Market`           | Agent identity — each agent represents one market            |
+| `SuperCluster`     | Scopes a simulation run to a group of related markets        |
+| `Cluster`          | Market groupings within a supercluster                       |
 | `ClusterMarket`    | Join table to resolve which markets belong to which clusters |
-| `SimulationRun`    | Top-level run record (config, status, cost tracking) |
-| `SimulationAction` | Every post/reply/stance-change an agent makes |
-| `SimulationHedge`  | Ranked hedge pairs extracted after simulation |
-| `NewsArticle`      | Optional — seed stimulus for round-0 context |
+| `SimulationRun`    | Top-level run record (config, status, cost tracking)         |
+| `SimulationAction` | Every post/reply/stance-change an agent makes                |
+| `SimulationHedge`  | Ranked hedge pairs extracted after simulation                |
+| `NewsArticle`      | Optional — seed stimulus for round-0 context                 |
 
 Models like `PricePoint`, `PriceFeature`, `EmbeddingConfig`, `MultibetInference`, etc. can be dropped from our local schema since we won't query them.
 
@@ -57,6 +57,7 @@ The goal is a working end-to-end loop:
 5. **Display results** — minimal UI or API response showing the simulation feed + ranked hedges
 
 ### Out of scope for MVP
+
 - Admin approval workflow
 - Zep graph integration (canonical/simulation graph diffs)
 - Cost optimization / token budgeting
@@ -85,10 +86,10 @@ uvicorn app.main:app --reload --port 8000
 
 ## Environment Variables
 
-| Variable       | Description                              |
-| -------------- | ---------------------------------------- |
-| `DATABASE_URL` | PostgreSQL connection string |
-| `LLM_API_KEY`  | API key for the LLM provider             |
+| Variable        | Description                                                   |
+| --------------- | ------------------------------------------------------------- |
+| `DATABASE_URL`  | PostgreSQL connection string |
+| `VERTEX_API_KEY` | Gemini API key for cluster/super-cluster naming              |
 
 ## Reference
 
