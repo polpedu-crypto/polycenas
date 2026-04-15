@@ -1,0 +1,9 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+
+# Next.js build artifacts
+**/.next/
+**/.next-env.d.ts

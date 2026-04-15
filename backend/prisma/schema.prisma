@@ -1,0 +1,89 @@
+generator client {
+  provider      = "prisma-client-py"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+model Market {
+  id            Int          @id @default(autoincrement())
+  polymarketId  String       @unique
+  conditionId   String?
+  clobTokenIds  String[]     @default([])
+  marketMakerAddress String?
+  title         String
+  description   String?
+  category      String?
+  subCategory   String?
+  resolutionSource String?
+  eventTitle    String?
+  groupItemTitle String?
+  createdAt     DateTime
+  resolvedAt    DateTime?
+  closed        Boolean      @default(false)
+  volume        Float?       @default(0)
+  liquidity     Float?       @default(0)
+  embeddingX    Float?
+  embeddingY    Float?
+  graphEmbedding Json?
+  clusterMarkets ClusterMarket[]
+  createdAtDb   DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  lastPolledAt  DateTime?
+  imageUrl      String?
+
+  @@index([lastPolledAt])
+  @@index([category])
+  @@index([embeddingX, embeddingY])
+  @@index([conditionId])
+}
+
+model Cluster {
+  id             Int              @id @default(autoincrement())
+  jobId          Int?
+  category       String?
+  isGlobal       Boolean          @default(true)
+  centroidX      Float?
+  centroidY      Float?
+  keywords       String[]         @default([])
+  name           String?
+  totalVolume    Float?
+  topMarketId    Int?
+  topMarketTitle String?
+  superClusterId Int?
+  clusterMarkets ClusterMarket[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([jobId])
+  @@index([category])
+  @@index([isGlobal])
+  @@index([superClusterId])
+}
+
+model SuperCluster {
+  id             Int             @id
+  name           String
+  namingSource   String?
+  metadata       Json?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([name])
+}
+
+model ClusterMarket {
+  id        Int     @id @default(autoincrement())
+  cluster   Cluster @relation(fields: [clusterId], references: [id], onDelete: Cascade)
+  clusterId Int
+  market    Market  @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  marketId  Int
+
+  @@unique([clusterId, marketId])
+  @@index([clusterId])
+  @@index([marketId])
+}
