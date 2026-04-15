@@ -209,6 +209,55 @@ Return a single cluster with its markets.
 { "detail": "Cluster 99 not found" }
 ```
 
+### `GET /clusters/{cluster_id}/multibets`
+
+List synthesized multibets (hedges) associated with a cluster.
+
+Association rule: a multibet is included when either `market_a_cluster_id` or
+`market_b_cluster_id` equals the provided `cluster_id`.
+
+**Path params:**
+- `cluster_id` (int) — Cluster ID
+
+**Query params:**
+- `status` (string, optional) — one of `pending`, `approved`, `rejected`
+- `skip` (int, default `0`) — pagination offset
+- `limit` (int, default `100`, max `500`) — page size
+
+**Response** `200`
+```json
+{
+  "cluster_id": 142,
+  "data": [
+    {
+      "id": 12,
+      "simulation_run_id": "43eef8f0-e61b-45c8-8600-16a963df90c8",
+      "rank": 1,
+      "market_a_id": 66,
+      "market_b_id": 1033,
+      "market_a_cluster_id": 142,
+      "market_b_cluster_id": 2292,
+      "confidence_score": 72,
+      "status": "pending",
+      "run_status": "completed",
+      "run_started_at": "2026-04-15T13:26:11.123",
+      "run_completed_at": "2026-04-15T13:26:45.987"
+    }
+  ],
+  "pagination": { "skip": 0, "limit": 100, "total": 1, "hasMore": false }
+}
+```
+
+**Response** `400`
+```json
+{ "detail": "status must be one of: pending, approved, rejected" }
+```
+
+**Response** `404`
+```json
+{ "detail": "Cluster 99 not found" }
+```
+
 ### `GET /clusters/{cluster_id}/correlation/stream`
 
 Same analysis as `/correlation` but streamed as Server-Sent Events so the client can render progress while Polymarket fetches are in flight. Use this when latency matters or the cluster is large.
