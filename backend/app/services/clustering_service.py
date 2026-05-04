@@ -11,14 +11,12 @@ Guarantees:
 Adapted from PolymarketDashboard for the Polycenas hackathon MVP.
 """
 
-import json
 import re
 import numpy as np
 from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
 from collections import defaultdict, Counter
 from datetime import datetime, timezone
-from prisma import Json as PrismaJson
 
 from bertopic import BERTopic
 from hdbscan import HDBSCAN
@@ -586,11 +584,7 @@ class GraphRebuildService:
         l1 = MarketClusteringService()
         market_to_cluster, cluster_names, market_positions = await l1.cluster_markets(markets)
 
-        # 3. Snapshot old clusters for later deletion
-        old_clusters = await prisma.cluster.find_many(where={"isGlobal": True})
-        old_ids = [c.id for c in old_clusters]
-
-        # 4. Persist new clusters + cluster-market links
+        # 3. Persist new clusters + cluster-market links
         cluster_markets_map: Dict[int, list] = defaultdict(list)
         for m in markets:
             tid = market_to_cluster.get(m.id)
@@ -667,7 +661,7 @@ class GraphRebuildService:
             await prisma.execute_raw(
                 f'UPDATE "Market" SET "embeddingX" = CASE "id" {cases_x} END, '
                 f'"embeddingY" = CASE "id" {cases_y} END, '
-                f'"graphEmbedding" = \'[]\' '
+                f'"graphEmbedding" = \'[]\'::jsonb '
                 f'WHERE "id" IN ({ids})'
             )
             if (i + batch_size) % 1000 == 0 or i + batch_size >= len(position_updates):
@@ -675,7 +669,7 @@ class GraphRebuildService:
 
         log(f"DB persist done: {cluster_count} clusters, {market_count} markets")
 
-        # 5. Layer 2 — super-clusters (no edges needed for MVP)
+        # 4. Layer 2 — super-clusters (no edges needed for MVP)
         log("\nStarting Layer 2 — super-cluster detection...")
         db_clusters = await prisma.cluster.find_many(
             where={"id": {"in": list(topic_to_db_id.values())}},
@@ -728,15 +722,18 @@ class GraphRebuildService:
             if active_sids:
                 await prisma.supercluster.delete_many(where={"id": {"not_in": active_sids}})
 
-        # 6. Delete all clusters that aren't part of this rebuild
+        # 5. Delete all clusters that aren't part of this rebuild
         new_ids = list(topic_to_db_id.values())
-        stale = await prisma.cluster.find_many(where={"id": {"not_in": new_ids}})
-        stale_ids = [c.id for c in stale]
-        if stale_ids:
-            log(f"Deleting {len(stale_ids)} stale clusters (keeping {len(new_ids)} new)...")
-            await prisma.clustermarket.delete_many(where={"clusterId": {"in": stale_ids}})
-            await prisma.cluster.delete_many(where={"id": {"in": stale_ids}})
-            log(f"Deleted {len(stale_ids)} stale clusters")
+        if new_ids:
+            stale = await prisma.cluster.find_many(where={"id": {"not_in": new_ids}})
+            stale_ids = [c.id for c in stale]
+            if stale_ids:
+                log(f"Deleting {len(stale_ids)} stale clusters (keeping {len(new_ids)} new)...")
+                await prisma.clustermarket.delete_many(where={"clusterId": {"in": stale_ids}})
+                await prisma.cluster.delete_many(where={"id": {"in": stale_ids}})
+                log(f"Deleted {len(stale_ids)} stale clusters")
+        else:
+            log("No new clusters created — skipping stale cleanup to avoid wiping the table")
 
         result = {
             "status": "completed",
