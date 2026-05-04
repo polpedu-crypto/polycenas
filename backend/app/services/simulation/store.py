@@ -96,6 +96,9 @@ class SimulationRunState:
         self.error = error
         self.completed_at = datetime.utcnow().isoformat()
         await self.set_status("failed")
+        # Persist failed runs too so the trace survives a restart — that's
+        # exactly when we need to be able to inspect what happened.
+        self._flush_to_disk()
         await self._close_subscribers()
 
     # ──────────────── subscribers (WS + SSE share the queue protocol) ────────────────

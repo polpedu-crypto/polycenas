@@ -16,7 +16,9 @@ logger = logging.getLogger(__name__)
 
 
 async def run_pipeline(run: SimulationRunState, config: SimulationConfig, llm: LLMService) -> None:
-    run.status = "running"
+    # Broadcast "running" via set_status so live WS subscribers see the
+    # transition out of "pending". Mutating run.status directly skips that.
+    await run.set_status("running")
     await run.set_step("loading supercluster")
 
     sc = await prisma.supercluster.find_unique(where={"id": config.super_cluster_id})

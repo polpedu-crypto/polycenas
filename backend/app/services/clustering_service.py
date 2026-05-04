@@ -11,14 +11,14 @@ Guarantees:
 Adapted from PolymarketDashboard for the Polycenas hackathon MVP.
 """
 
-import json
+import math
 import re
+import sys
 import numpy as np
 from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
 from collections import defaultdict, Counter
 from datetime import datetime, timezone
-from prisma import Json as PrismaJson
 
 from bertopic import BERTopic
 from hdbscan import HDBSCAN
@@ -34,13 +34,16 @@ from app.db.prisma_client import prisma
 from app.config import settings
 from app.services.llm_service import LLMService
 
-import sys
-
 
 def log(msg: str = ""):
     """Print with immediate flush so background tasks show output in real time."""
     print(msg, flush=True)
     sys.stdout.flush()
+
+
+def _safe_float(v: float) -> float:
+    """Replace NaN/Inf with 0.0 so they don't end up in raw SQL literals."""
+    return 0.0 if v is None or not math.isfinite(v) else float(v)
 
 
 # ---------------------------------------------------------------------------
@@ -323,8 +326,9 @@ class MarketClusteringService:
         pos = umap_2d.fit_transform(embeddings)
         market_positions: Dict[int, Tuple[float, float]] = {}
         for eg, (x, y) in zip(event_groups, pos):
+            sx, sy = _safe_float(x), _safe_float(y)
             for mid in eg.market_ids:
-                market_positions[mid] = (float(x), float(y))
+                market_positions[mid] = (sx, sy)
         return market_positions
 
     @staticmethod
@@ -414,9 +418,14 @@ class SuperClusterService:
         if n < 3:
             return {cid: 0 for cid in cid_to_idx}
 
+        # UMAP requires n_components < n_samples; cap defensively so small
+        # reclusters don't crash with cryptic ARPACK errors.
+        n_components = max(2, min(10, n - 2))
+        n_neighbors = max(2, min(10, n - 1))
+
         reduced = UMAP(
-            n_components=10,
-            n_neighbors=min(10, max(2, n - 1)),
+            n_components=n_components,
+            n_neighbors=n_neighbors,
             min_dist=0.0,
             metric="cosine",
             random_state=42,
@@ -554,7 +563,7 @@ class SuperClusterService:
         )
         pos = umap_2d.fit_transform(embeddings)
         idx_to_cid = {v: k for k, v in cid_to_idx.items()}
-        return {idx_to_cid[i]: (float(x), float(y)) for i, (x, y) in enumerate(pos)}
+        return {idx_to_cid[i]: (_safe_float(x), _safe_float(y)) for i, (x, y) in enumerate(pos)}
 
 
 # ---------------------------------------------------------------------------
@@ -586,11 +595,7 @@ class GraphRebuildService:
         l1 = MarketClusteringService()
         market_to_cluster, cluster_names, market_positions = await l1.cluster_markets(markets)
 
-        # 3. Snapshot old clusters for later deletion
-        old_clusters = await prisma.cluster.find_many(where={"isGlobal": True})
-        old_ids = [c.id for c in old_clusters]
-
-        # 4. Persist new clusters + cluster-market links
+        # 3. Persist new clusters + cluster-market links
         cluster_markets_map: Dict[int, list] = defaultdict(list)
         for m in markets:
             tid = market_to_cluster.get(m.id)
@@ -618,8 +623,8 @@ class GraphRebuildService:
 
             cluster = await prisma.cluster.create(data={
                 "isGlobal": True,
-                "centroidX": cx,
-                "centroidY": cy,
+                "centroidX": _safe_float(cx),
+                "centroidY": _safe_float(cy),
                 "keywords": keywords,
                 "name": name,
                 "totalVolume": float(total_vol),
@@ -657,7 +662,9 @@ class GraphRebuildService:
                 continue
             for m in c_markets:
                 x, y = market_positions.get(m.id, (0.0, 0.0))
-                position_updates.append((m.id, float(x), float(y)))
+                # _safe_float guards against UMAP-emitted NaN/Inf, which Postgres
+                # rejects when interpolated as a bare literal into raw SQL.
+                position_updates.append((m.id, _safe_float(x), _safe_float(y)))
 
         for i in range(0, len(position_updates), batch_size):
             chunk = position_updates[i:i + batch_size]
@@ -675,7 +682,7 @@ class GraphRebuildService:
 
         log(f"DB persist done: {cluster_count} clusters, {market_count} markets")
 
-        # 5. Layer 2 — super-clusters (no edges needed for MVP)
+        # 4. Layer 2 — super-clusters (no edges needed for MVP)
         log("\nStarting Layer 2 — super-cluster detection...")
         db_clusters = await prisma.cluster.find_many(
             where={"id": {"in": list(topic_to_db_id.values())}},
@@ -706,8 +713,8 @@ class GraphRebuildService:
                 pos = positions.get(c.id)
                 update_data: dict = {}
                 if pos:
-                    update_data["centroidX"] = float(pos[0])
-                    update_data["centroidY"] = float(pos[1])
+                    update_data["centroidX"] = _safe_float(pos[0])
+                    update_data["centroidY"] = _safe_float(pos[1])
                 if sid is not None:
                     update_data["superClusterId"] = sid
                 if update_data:
@@ -728,7 +735,7 @@ class GraphRebuildService:
             if active_sids:
                 await prisma.supercluster.delete_many(where={"id": {"not_in": active_sids}})
 
-        # 6. Delete all clusters that aren't part of this rebuild
+        # 5. Delete all clusters that aren't part of this rebuild
         new_ids = list(topic_to_db_id.values())
         stale = await prisma.cluster.find_many(where={"id": {"not_in": new_ids}})
         stale_ids = [c.id for c in stale]
